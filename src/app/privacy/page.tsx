@@ -9,7 +9,7 @@ export default function PrivacyPage() {
       <header className="border-b border-gray-200">
         <nav className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between">
           <a href="/" className="text-2xl font-bold hover:text-blue-600 transition-colors">
-            HabitFlow
+            ExpenseFlow
           </a>
           <div className="flex items-center gap-6">
             <a href="/terms" className="text-gray-600 hover:text-blue-600 transition-colors">
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-3xl font-bold mb-4">1. Introduction</h2>
             <p className="text-gray-700 leading-relaxed">
-              At HabitFlow, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our habit tracking application. Please read this privacy policy carefully.
+              At ExpenseFlow, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our habit tracking application. Please read this privacy policy carefully.
             </p>
           </section>
 
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
 
             <h3 className="text-2xl font-semibold mb-3 mt-6">Habit Data</h3>
             <p className="text-gray-700 leading-relaxed mb-3">
-              When you use HabitFlow, we collect:
+              When you use ExpenseFlow, we collect:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-700">
               <li>Habits you create and track</li>
@@ -136,7 +136,7 @@ export default function PrivacyPage() {
               <li>Withdraw consent at any time</li>
             </ul>
             <p className="text-gray-700 leading-relaxed mt-4">
-              To exercise these rights, please contact us at privacy@habitflow.com.
+              To exercise these rights, please contact us at privacy@expenseflow.com.
             </p>
           </section>
 
@@ -163,7 +163,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-3xl font-bold mb-4">9. Children's Privacy</h2>
             <p className="text-gray-700 leading-relaxed">
-              HabitFlow is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us, and we will delete such information.
+              ExpenseFlow is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us, and we will delete such information.
             </p>
           </section>
 
@@ -184,7 +184,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-3xl font-bold mb-4">12. Changes to This Privacy Policy</h2>
             <p className="text-gray-700 leading-relaxed">
-              We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new Privacy Policy on this page and updating the "Last updated" date. Your continued use of HabitFlow after such changes constitutes acceptance of the updated policy.
+              We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new Privacy Policy on this page and updating the "Last updated" date. Your continued use of ExpenseFlow after such changes constitutes acceptance of the updated policy.
             </p>
           </section>
 
@@ -195,9 +195,9 @@ export default function PrivacyPage() {
             </p>
             <div className="bg-gray-50 rounded-2xl p-6">
               <p className="text-gray-700">
-                <strong>Email:</strong> privacy@habitflow.com<br />
+                <strong>Email:</strong> privacy@expenseflow.com<br />
                 <strong>Address:</strong> 123 Habit Street, San Francisco, CA 94102<br />
-                <strong>Data Protection Officer:</strong> dpo@habitflow.com
+                <strong>Data Protection Officer:</strong> dpo@expenseflow.com
               </p>
             </div>
           </section>
@@ -220,11 +220,11 @@ export default function PrivacyPage() {
       {/* Footer */}
       <footer className="border-t border-gray-200 py-8 px-6 mt-16">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
-          <p>&copy; 2025 HabitFlow. All rights reserved.</p>
+          <p>&copy; 2025 ExpenseFlow. All rights reserved.</p>
           <div className="flex gap-6">
             <a href="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</a>
             <a href="/terms" className="hover:text-blue-600 transition-colors">Terms of Service</a>
-            <a href="mailto:support@habitflow.com" className="hover:text-blue-600 transition-colors">Contact</a>
+            <a href="mailto:support@expenseflow.com" className="hover:text-blue-600 transition-colors">Contact</a>
           </div>
         </div>
       </footer>

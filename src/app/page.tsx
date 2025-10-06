@@ -7,31 +7,31 @@ const testimonials = [
     text: "ExpenseFlow changed my financial life. I've been tracking my expenses for 90 days straight and saved 30% more than before!",
     name: "Sarah Chen",
     role: "Product Designer",
-    image: "../public/faces/face-1.png"
+    image: "/faces/face-5.png"
   },
   {
     text: "Finally, an expense tracker that doesn't overwhelm me. Simple, beautiful, and it just works. Best decision I made this year.",
     name: "Marcus Johnson",
     role: "Entrepreneur",
-    image: "MJ"
+    image: "/faces/face-1.png"
   },
   {
     text: "I tried every expense app out there. ExpenseFlow is the only one I stuck with. The minimalist design keeps me focused on saving.",
     name: "Emily Rodriguez",
     role: "Writer",
-    image: "ER"
+    image: "/faces/face-2.png"
   },
   {
     text: "The analytics are incredible. I discovered I was spending $400/month on subscriptions I forgot about!",
     name: "David Park",
     role: "Software Engineer",
-    image: "DP"
+    image: "/faces/face-4.png"
   },
   {
     text: "As a freelancer, tracking business expenses used to be a nightmare. ExpenseFlow makes it effortless.",
     name: "Lisa Thompson",
     role: "Freelance Designer",
-    image: "../public/faces/face-1.png"
+    image: "/faces/face-3.png"
   }
 ];
 
@@ -76,7 +76,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
         <nav className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="text-xl font-semibold text-black">ExpenseFlow</div>
+          <div className="text-xl font-semibold text-black"><img src={"/logo.svg"} width={150}/></div>
           
           <div className="hidden md:flex items-center gap-8">
             <button onClick={() => scrollToSection('features')} className="text-sm text-gray-600 hover:text-black transition-colors">Features</button>
@@ -304,6 +304,18 @@ export default function LandingPage() {
                   </svg>
                   7 categories
                 </li>
+                <li className="flex items-center gap-2 text-gray-700">
+                <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 6l12 12M6 18L18 6"/>
+                </svg>
+                  PDF export
+                </li>
+                <li className="flex items-center gap-2 text-gray-700">
+                <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 6l12 12M6 18L18 6"/>
+                </svg>
+                  CSV export
+                </li>
               </ul>
               <a href="/signup" className="block w-full text-center border border-gray-300 text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors">
                 Start Free
@@ -323,7 +335,19 @@ export default function LandingPage() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Everything in Free
+                  Track unlimited expenses
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Basic analytics
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  7 categories
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,16 +356,10 @@ export default function LandingPage() {
                   PDF export
                 </li>
                 <li className="flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Advanced analytics
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Priority support
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 6l12 12M6 18L18 6"/>
+                </svg>
+                  CSV export
                 </li>
               </ul>
               <a href="/signup" className="block w-full text-center bg-white text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">
@@ -359,25 +377,31 @@ export default function LandingPage() {
                   <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  Everything in Pro
+                  Track unlimited expenses
                 </li>
                 <li className="flex items-center gap-2 text-gray-700">
+                  <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Track unlimited expenses
+                </li>
+                <li className="flex items-center gap-2 text-gray-700">
+                  <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  7 categories
+                </li>
+                <li className="flex items-center gap-2 text-gray-700">
+                  <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  PDF export
+                </li>
+                                <li className="flex items-center gap-2 text-gray-700">
                   <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   CSV export
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Team collaboration
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  API access
                 </li>
               </ul>
               <a href="/signup" className="block w-full text-center border border-gray-300 text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors">
@@ -411,7 +435,7 @@ export default function LandingPage() {
               >
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    <img src={"/public/faces/face-1.png"} width={50} height={50}/>
+                    <img src={testimonial.image} width={50} height={50}/>
                   </div>
                   <div>
                     <div className="font-semibold text-black">{testimonial.name}</div>

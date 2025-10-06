@@ -1,9 +1,8 @@
-<h1 align="center">ExpenseFlow</h1>
 
 <p align="center">
   <br>
   <img src="./public/readme-files/md-logo.png" alt="ExpenseFlow Logo" width="100"/>
-  <br>  <br> 
+  <h1 align="center">ExpenseFlow</h1>
 </p>
 
 A modern, minimalist expense tracking application built with Next.js and Supabase. Track your expenses, visualize spending patterns, and export your financial data with ease.

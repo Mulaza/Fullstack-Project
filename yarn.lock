@@ -2725,9 +2725,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"habitflow@workspace:.":
+"expenseflow@workspace:.":
   version: 0.0.0-use.local
-  resolution: "habitflow@workspace:."
+  resolution: "expenseflow@workspace:."
   dependencies:
     "@eslint/eslintrc": ^3
     "@supabase/supabase-js": ^2.58.0

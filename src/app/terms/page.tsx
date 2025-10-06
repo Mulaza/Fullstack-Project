@@ -9,7 +9,7 @@ export default function TermsPage() {
       <header className="border-b border-gray-200">
         <nav className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between">
           <a href="/" className="text-2xl font-bold hover:text-blue-600 transition-colors">
-            HabitFlow
+            ExpenseFlow
           </a>
           <div className="flex items-center gap-6">
             <a href="/privacy" className="text-gray-600 hover:text-blue-600 transition-colors">
@@ -33,14 +33,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-3xl font-bold mb-4">1. Acceptance of Terms</h2>
             <p className="text-gray-700 leading-relaxed">
-              By accessing and using HabitFlow, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use our service.
+              By accessing and using ExpenseFlow, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to these Terms of Service, please do not use our service.
             </p>
           </section>
 
           <section>
             <h2 className="text-3xl font-bold mb-4">2. Description of Service</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              HabitFlow provides a habit tracking application that allows users to track their daily habits, build streaks, and monitor their progress over time. Our service includes both free and premium subscription tiers.
+              ExpenseFlow provides a habit tracking application that allows users to track their daily habits, build streaks, and monitor their progress over time. Our service includes both free and premium subscription tiers.
             </p>
             <p className="text-gray-700 leading-relaxed">
               We reserve the right to modify, suspend, or discontinue any aspect of the service at any time, with or without notice.
@@ -50,7 +50,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-3xl font-bold mb-4">3. User Accounts</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              To use certain features of HabitFlow, you must register for an account. You agree to provide accurate, current, and complete information during the registration process and to update such information to keep it accurate, current, and complete.
+              To use certain features of ExpenseFlow, you must register for an account. You agree to provide accurate, current, and complete information during the registration process and to update such information to keep it accurate, current, and complete.
             </p>
             <p className="text-gray-700 leading-relaxed">
               You are responsible for safeguarding your password and for all activities that occur under your account. You agree to notify us immediately of any unauthorized use of your account.
@@ -60,10 +60,10 @@ export default function TermsPage() {
           <section>
             <h2 className="text-3xl font-bold mb-4">4. User Content</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              You retain all rights to the content you create and store in HabitFlow, including your habit data, notes, and any other information you input into the service.
+              You retain all rights to the content you create and store in ExpenseFlow, including your habit data, notes, and any other information you input into the service.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              By using our service, you grant HabitFlow a limited license to store, process, and display your content solely for the purpose of providing and improving our service.
+              By using our service, you grant ExpenseFlow a limited license to store, process, and display your content solely for the purpose of providing and improving our service.
             </p>
           </section>
 
@@ -83,7 +83,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-3xl font-bold mb-4">6. Subscriptions and Payments</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              HabitFlow offers both free and paid subscription plans. Paid subscriptions are billed on a recurring basis and will automatically renew unless cancelled before the renewal date.
+              ExpenseFlow offers both free and paid subscription plans. Paid subscriptions are billed on a recurring basis and will automatically renew unless cancelled before the renewal date.
             </p>
             <p className="text-gray-700 leading-relaxed mb-4">
               You may cancel your subscription at any time through your account settings. Cancellations will take effect at the end of your current billing period. No refunds will be provided for partial subscription periods.
@@ -96,21 +96,21 @@ export default function TermsPage() {
           <section>
             <h2 className="text-3xl font-bold mb-4">7. Intellectual Property</h2>
             <p className="text-gray-700 leading-relaxed">
-              The HabitFlow service, including its original content, features, and functionality, is owned by HabitFlow and is protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
+              The ExpenseFlow service, including its original content, features, and functionality, is owned by ExpenseFlow and is protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
             </p>
           </section>
 
           <section>
             <h2 className="text-3xl font-bold mb-4">8. Disclaimer of Warranties</h2>
             <p className="text-gray-700 leading-relaxed">
-              HabitFlow is provided on an "as is" and "as available" basis without any warranties of any kind, either express or implied. We do not warrant that the service will be uninterrupted, secure, or error-free.
+              ExpenseFlow is provided on an "as is" and "as available" basis without any warranties of any kind, either express or implied. We do not warrant that the service will be uninterrupted, secure, or error-free.
             </p>
           </section>
 
           <section>
             <h2 className="text-3xl font-bold mb-4">9. Limitation of Liability</h2>
             <p className="text-gray-700 leading-relaxed">
-              To the maximum extent permitted by law, HabitFlow shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses.
+              To the maximum extent permitted by law, ExpenseFlow shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses.
             </p>
           </section>
 
@@ -134,7 +134,7 @@ export default function TermsPage() {
               If you have any questions about these Terms of Service, please contact us at:
             </p>
             <p className="text-gray-700 leading-relaxed mt-4">
-              Email: legal@habitflow.com<br />
+              Email: legal@expenseflow.com<br />
               Address: 123 Habit Street, San Francisco, CA 94102
             </p>
           </section>
@@ -157,11 +157,11 @@ export default function TermsPage() {
       {/* Footer */}
       <footer className="border-t border-gray-200 py-8 px-6 mt-16">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
-          <p>&copy; 2025 HabitFlow. All rights reserved.</p>
+          <p>&copy; 2025 ExpenseFlow. All rights reserved.</p>
           <div className="flex gap-6">
             <a href="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</a>
             <a href="/terms" className="hover:text-blue-600 transition-colors">Terms of Service</a>
-            <a href="mailto:support@habitflow.com" className="hover:text-blue-600 transition-colors">Contact</a>
+            <a href="mailto:support@expenseflow.com" className="hover:text-blue-600 transition-colors">Contact</a>
           </div>
         </div>
       </footer>
