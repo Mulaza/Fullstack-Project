@@ -2,23 +2,54 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { validateEmail, sanitizeInput } from '../lib/validation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({
+    email: '',
+  });
+
+  const validateForm = () => {
+    const emailValidation = validateEmail(email);
+
+    setValidationErrors({
+      email: emailValidation.error || '',
+    });
+
+    if (!emailValidation.isValid) {
+      return false;
+    }
+
+    if (!password) {
+      setError('Password is required');
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // Sanitize email before sending
+      const sanitizedEmail = sanitizeInput(email.toLowerCase().trim());
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: sanitizedEmail, password })
       });
 
       const data = await response.json();
@@ -59,7 +90,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
-      {/* Loading Overlay */}
       {loading && (
         <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
@@ -98,12 +128,22 @@ export default function LoginPage() {
               type="email"
               id="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setValidationErrors({ email: '' });
+              }}
               placeholder="name@example.com"
               required
               disabled={loading}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:border-black focus:ring-1 focus:ring-black focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-1 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                validationErrors.email 
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300 focus:border-black focus:ring-black'
+              }`}
             />
+            {validationErrors.email && (
+              <p className="mt-1 text-xs text-red-600">{validationErrors.email}</p>
+            )}
           </div>
 
           <div>

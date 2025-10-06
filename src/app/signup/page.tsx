@@ -2,6 +2,14 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { 
+  validateUsername, 
+  validateEmail, 
+  validatePassword,
+  sanitizeInput,
+  USERNAME_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH 
+} from '../lib/validation';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -11,27 +19,63 @@ export default function SignupPage() {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({
+    name: '',
+    email: '',
+    password: ''
+  });
+
+  const validateForm = () => {
+    const nameValidation = validateUsername(name);
+    const emailValidation = validateEmail(email);
+    const passwordValidation = validatePassword(password);
+
+    setValidationErrors({
+      name: nameValidation.error || '',
+      email: emailValidation.error || '',
+      password: passwordValidation.error || ''
+    });
+
+    if (!nameValidation.isValid || !emailValidation.isValid || !passwordValidation.isValid) {
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords don't match!");
+      return false;
+    }
+
+    if (!agreeToTerms) {
+      setError("Please agree to the Terms and Privacy Policy");
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
-    if (password !== confirmPassword) {
-      setError("Passwords don't match!");
-      return;
-    }
-    if (!agreeToTerms) {
-      setError("Please agree to the Terms and Privacy Policy");
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
 
     try {
+      // Sanitize inputs before sending
+      const sanitizedName = sanitizeInput(name);
+      const sanitizedEmail = sanitizeInput(email.toLowerCase().trim());
+
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name })
+        body: JSON.stringify({ 
+          email: sanitizedEmail, 
+          password, 
+          name: sanitizedName 
+        })
       });
 
       const data = await response.json();
@@ -44,7 +88,7 @@ export default function SignupPage() {
 
       // Now sign in the user
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: sanitizedEmail,
         password
       });
 
@@ -78,7 +122,6 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4 py-12">
-      {/* Loading Overlay */}
       {loading && (
         <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
@@ -117,12 +160,26 @@ export default function SignupPage() {
               type="text"
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setValidationErrors({ ...validationErrors, name: '' });
+              }}
               placeholder="John Doe"
+              maxLength={USERNAME_MAX_LENGTH}
               required
               disabled={loading}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:border-black focus:ring-1 focus:ring-black focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-1 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                validationErrors.name 
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300 focus:border-black focus:ring-black'
+              }`}
             />
+            {validationErrors.name && (
+              <p className="mt-1 text-xs text-red-600">{validationErrors.name}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">
+              {name.length}/{USERNAME_MAX_LENGTH} characters
+            </p>
           </div>
 
           <div>
@@ -133,12 +190,22 @@ export default function SignupPage() {
               type="email"
               id="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setValidationErrors({ ...validationErrors, email: '' });
+              }}
               placeholder="name@example.com"
               required
               disabled={loading}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:border-black focus:ring-1 focus:ring-black focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-1 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                validationErrors.email 
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300 focus:border-black focus:ring-black'
+              }`}
             />
+            {validationErrors.email && (
+              <p className="mt-1 text-xs text-red-600">{validationErrors.email}</p>
+            )}
           </div>
 
           <div>
@@ -149,13 +216,26 @@ export default function SignupPage() {
               type="password"
               id="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setValidationErrors({ ...validationErrors, password: '' });
+              }}
               placeholder="Create a strong password"
+              maxLength={PASSWORD_MAX_LENGTH}
               required
-              minLength={6}
               disabled={loading}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:border-black focus:ring-1 focus:ring-black focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-1 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                validationErrors.password 
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300 focus:border-black focus:ring-black'
+              }`}
             />
+            {validationErrors.password && (
+              <p className="mt-1 text-xs text-red-600">{validationErrors.password}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">
+              Must be 8-128 characters with at least one letter and one number
+            </p>
           </div>
 
           <div>
@@ -225,7 +305,7 @@ export default function SignupPage() {
           Continue with Google
         </button>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-6 text-center text-xs text-gray-500">
           Free forever · No credit card required
         </p>
       </div>

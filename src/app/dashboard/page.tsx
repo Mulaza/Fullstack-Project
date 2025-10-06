@@ -8,12 +8,6 @@ import autoTable from 'jspdf-autotable';
 
 const categories = ['Food', 'Transport', 'Entertainment', 'Health', 'Shopping', 'Bills', 'Other'];
 
-const plans = [
-  { name: 'free', displayName: 'Free', price: 0, features: ['Track unlimited expenses', 'View basic analytics', '7 categories'] },
-  { name: 'pro', displayName: 'Pro', price: 4.99, features: ['Everything in Free', 'Export to PDF', 'Advanced analytics', 'Priority support'] },
-  { name: 'business', displayName: 'Business', price: 14.99, features: ['Everything in Pro', 'Export to CSV', 'Team collaboration', 'API access'] }
-];
-
 export default function ExpenseDashboard() {
   const [expenses, setExpenses] = useState([]);
   const [user, setUser] = useState(null);
@@ -26,9 +20,7 @@ export default function ExpenseDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
-  const [selectedPlan, setSelectedPlan] = useState('pro');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -188,43 +180,9 @@ export default function ExpenseDashboard() {
     setShowEditModal(true);
   };
 
-  const handleUpgradePlan = async () => {
-    setActionLoading(true);
-    setLoadingMessage('Upgrading plan...');
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await fetch('/api/subscriptions/upgrade', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({ plan: selectedPlan })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error);
-        setActionLoading(false);
-        return;
-      }
-
-      setUserPlan(selectedPlan);
-      setShowUpgradeModal(false);
-      setActionLoading(false);
-      alert(data.message);
-    } catch (error) {
-      alert('Error upgrading plan: ' + error.message);
-      setActionLoading(false);
-    }
-  };
-
   const exportToPDF = () => {
     if (!['pro', 'business'].includes(userPlan)) {
-      setShowUpgradeModal(true);
+      window.location.href = '/subscriptions';
       return;
     }
 
@@ -235,19 +193,16 @@ export default function ExpenseDashboard() {
       const doc = new jsPDF();
       const totalAmount = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
       
-      // Title
       doc.setFontSize(24);
       doc.setFont('helvetica', 'bold');
       doc.text('Expense Report', 14, 20);
       
-      // Summary
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.text(`Total Expenses: ${totalAmount.toFixed(2)}`, 14, 35);
       doc.text(`Number of Transactions: ${expenses.length}`, 14, 42);
       doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 49);
       
-      // Table
       const tableData = expenses.map(exp => [
         exp.date,
         exp.title,
@@ -265,7 +220,6 @@ export default function ExpenseDashboard() {
         styles: { fontSize: 10 }
       });
       
-      // Footer
       const pageCount = doc.internal.pages.length - 1;
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -285,7 +239,7 @@ export default function ExpenseDashboard() {
 
   const exportToCSV = () => {
     if (userPlan !== 'business') {
-      setShowUpgradeModal(true);
+      window.location.href = '/subscriptions';
       return;
     }
 
@@ -341,6 +295,16 @@ export default function ExpenseDashboard() {
     date,
     amount: expensesByDate[date]
   }));
+
+  // Top 5 Biggest Expenses
+  const top5Expenses = [...expenses]
+    .sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount))
+    .slice(0, 5)
+    .map(exp => ({
+      title: exp.title.length > 15 ? exp.title.substring(0, 15) + '...' : exp.title,
+      amount: parseFloat(exp.amount),
+      category: exp.category
+    }));
 
   const categoryColors = {
     Food: '#000000',
@@ -462,16 +426,19 @@ export default function ExpenseDashboard() {
                 Export CSV
               </button>
 
-              <span className="px-3 py-1 bg-gray-100 text-black rounded-full text-sm font-medium capitalize">
+              <a
+                href="/subscriptions"
+                className="px-3 py-1 bg-gray-100 text-black rounded-full text-sm font-medium capitalize hover:bg-gray-200 transition-colors"
+              >
                 {userPlan}
-              </span>
+              </a>
               
-              <button 
-                onClick={() => setShowUpgradeModal(true)}
+              <a
+                href="/subscriptions"
                 className="bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 transition-colors font-medium"
               >
                 {userPlan === 'free' ? 'Upgrade' : 'Change Plan'}
-              </button>
+              </a>
 
               <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
                 <div className="text-right">
@@ -558,6 +525,26 @@ export default function ExpenseDashboard() {
                   </ResponsiveContainer>
                 </div>
               </div>
+
+              {/* Top 5 Biggest Expenses */}
+              {top5Expenses.length > 0 && (
+                <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
+                  <h3 className="text-base font-semibold mb-4 text-black">Top 5 Biggest Expenses</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={top5Expenses} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis type="number" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                      <YAxis dataKey="title" type="category" stroke="#6b7280" style={{ fontSize: '12px' }} width={120} />
+                      <Tooltip />
+                      <Bar dataKey="amount" radius={[0, 8, 8, 0]}>
+                        {top5Expenses.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={categoryColors[entry.category] || '#000000'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
 
               <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <h3 className="text-base font-semibold mb-4 text-black">Category Breakdown</h3>
@@ -767,6 +754,15 @@ export default function ExpenseDashboard() {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium mb-2 text-black">Date</label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:border-black focus:ring-1 focus:ring-black focus:outline-none"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium mb-2 text-black">Category</label>
                 <select
                   value={formData.category}
@@ -777,6 +773,15 @@ export default function ExpenseDashboard() {
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-black">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:border-black focus:ring-1 focus:ring-black focus:outline-none"
+                  rows={3}
+                />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
@@ -831,93 +836,6 @@ export default function ExpenseDashboard() {
                 className="flex-1 bg-red-600 text-white py-2.5 rounded-full hover:bg-red-700 transition-colors font-medium"
               >
                 Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-40"
-          onClick={() => setShowUpgradeModal(false)}
-        >
-          <div 
-            className="bg-white rounded-2xl p-8 max-w-4xl w-full relative border border-gray-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setShowUpgradeModal(false)}
-              className="absolute top-6 right-6 text-gray-400 hover:text-black transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <h2 className="text-3xl font-bold mb-2 text-black">Choose Your Plan</h2>
-            <p className="text-gray-600 mb-8">Select the plan that fits your needs</p>
-            
-            <div className="grid grid-cols-3 gap-6 mb-8">
-              {plans.map((plan) => (
-                <div
-                  key={plan.name}
-                  onClick={() => setSelectedPlan(plan.name)}
-                  className={`p-6 border-2 rounded-2xl cursor-pointer transition-all ${
-                    selectedPlan === plan.name
-                      ? 'border-black bg-gray-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  } ${userPlan === plan.name ? 'ring-2 ring-black ring-offset-2' : ''}`}
-                >
-                  {userPlan === plan.name && (
-                    <div className="text-xs font-semibold text-black mb-2">CURRENT PLAN</div>
-                  )}
-                  <div className="mb-4">
-                    <div className="text-xl font-bold text-black mb-1">{plan.displayName}</div>
-                    <div className="text-3xl font-bold text-black">
-                      ${plan.price}
-                      <span className="text-sm font-normal text-gray-600">/mo</span>
-                    </div>
-                  </div>
-                  <ul className="space-y-2 text-sm text-gray-700 mb-4">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <svg className="w-5 h-5 text-black mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mx-auto ${
-                    selectedPlan === plan.name
-                      ? 'border-black bg-black'
-                      : 'border-gray-300'
-                  }`}>
-                    {selectedPlan === plan.name && (
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowUpgradeModal(false)}
-                className="flex-1 border border-gray-300 py-2.5 rounded-full hover:bg-gray-50 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpgradePlan}
-                disabled={selectedPlan === userPlan}
-                className="flex-1 bg-black text-white py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {selectedPlan === userPlan ? 'Current Plan' : 'Upgrade Now'}
               </button>
             </div>
           </div>

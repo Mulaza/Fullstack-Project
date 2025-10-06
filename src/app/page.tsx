@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const testimonials = [
-  {
+   {
     text: "ExpenseFlow changed my financial life. I've been tracking my expenses for 90 days straight and saved 30% more than before!",
     name: "Sarah Chen",
     role: "Product Designer",
@@ -35,35 +36,49 @@ const testimonials = [
   }
 ];
 
+// Sample data for demo charts
+const sampleLineData = [
+  { date: 'Jan 1', amount: 245 },
+  { date: 'Jan 8', amount: 380 },
+  { date: 'Jan 15', amount: 290 },
+  { date: 'Jan 22', amount: 450 },
+  { date: 'Jan 29', amount: 320 },
+  { date: 'Feb 5', amount: 410 },
+];
+
+const samplePieData = [
+  { name: 'Food', value: 850, color: '#000000' },
+  { name: 'Transport', value: 450, color: '#3f3f46' },
+  { name: 'Entertainment', value: 320, color: '#71717a' },
+  { name: 'Bills', value: 680, color: '#d4d4d8' },
+];
+
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    let animationFrameId: number;
+    let animationFrameId;
     let scrollPosition = 0;
     const scrollSpeed = 0.5;
 
     const scroll = () => {
       scrollPosition += scrollSpeed;
-      
       if (scrollContainer.scrollLeft >= scrollContainer.scrollWidth / 2) {
         scrollPosition = 0;
       }
-      
       scrollContainer.scrollLeft = scrollPosition;
       animationFrameId = requestAnimationFrame(scroll);
     };
 
     animationFrameId = requestAnimationFrame(scroll);
-
     return () => cancelAnimationFrame(animationFrameId);
   }, []);
 
-  const scrollToSection = (sectionId: string) => {
+  const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -83,15 +98,10 @@ export default function LandingPage() {
             <button onClick={() => scrollToSection('pricing')} className="text-sm text-gray-600 hover:text-black transition-colors">Pricing</button>
             <button onClick={() => scrollToSection('testimonials')} className="text-sm text-gray-600 hover:text-black transition-colors">Testimonials</button>
             <a href="/login" className="text-sm text-gray-600 hover:text-black transition-colors">Login</a>
-            <a href="/signup" className="bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 transition-colors">
-              Get Started
-            </a>
+            <a href="/signup" className="bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 transition-colors">Get Started</a>
           </div>
 
-          <button 
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
+          <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {mobileMenuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -115,47 +125,40 @@ export default function LandingPage() {
         )}
       </header>
 
-      {/* Hero - Full Height */}
+      {/* Hero */}
       <section className="min-h-screen flex items-center justify-center px-6 pt-16">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
-            Smart expense tracking for everyone
-          </div>
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight text-black tracking-tight">
-            Finances made<br />simple
-          </h1>
-          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-            Track expenses, visualize spending patterns, and take control of your financial future with ExpenseFlow.
-          </p>
+          <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">Smart expense tracking for everyone</div>
+          <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight text-black tracking-tight">Finances made<br />simple</h1>
+          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">Track expenses, visualize spending patterns, and take control of your financial future with ExpenseFlow.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/signup" className="bg-black text-white px-8 py-3 rounded-full text-base font-medium hover:bg-gray-800 transition-colors">
-              Get Started Free
-            </a>
-            <a href="/login" className="border border-gray-300 text-black px-8 py-3 rounded-full text-base font-medium hover:bg-gray-50 transition-colors">
-              Sign In
-            </a>
+            <a href="/signup" className="bg-black text-white px-8 py-3 rounded-full text-base font-medium hover:bg-gray-800 transition-colors">Get Started Free</a>
+            <a href="/login" className="border border-gray-300 text-black px-8 py-3 rounded-full text-base font-medium hover:bg-gray-50 transition-colors">Sign In</a>
           </div>
           <p className="mt-6 text-sm text-gray-500">No credit card required · Free forever</p>
         </div>
       </section>
 
-      {/* Visual Section 1 - Image Left, Text Right */}
+      {/* Visual Section 1 - Line Chart */}
       <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
-            Powerful insights at your fingertips
-          </div>
+          <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">Powerful insights at your fingertips</div>
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="bg-gray-200 rounded-2xl h-96 flex items-center justify-center border border-gray-300">
-              <span className="text-gray-500 text-lg">Your Image Here</span>
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-semibold mb-4 text-black">Your Spending Over Time</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={sampleLineData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="amount" stroke="#000000" strokeWidth={3} dot={{ fill: '#000', r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
             <div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-black">
-                Track every dollar with precision
-              </h2>
-              <p className="text-lg text-gray-600 mb-6">
-                Get real-time insights into your spending habits. Our intelligent categorization and beautiful visualizations make it easy to see where your money goes.
-              </p>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-black">Track every dollar with precision</h2>
+              <p className="text-lg text-gray-600 mb-6">Get real-time insights into your spending habits. Our intelligent categorization and beautiful visualizations make it easy to see where your money goes.</p>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,20 +184,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Visual Section 2 - Text Left, Image Right */}
+      {/* Visual Section 2 - Pie Chart */}
       <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="inline-block mb-8 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
-            Stay organized effortlessly
-          </div>
+          <div className="inline-block mb-8 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">Stay organized effortlessly</div>
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-black">
-                Never miss a transaction
-              </h2>
-              <p className="text-lg text-gray-600 mb-6">
-                Keep all your expenses in one place. Whether it's a coffee or a car payment, ExpenseFlow helps you stay on top of every purchase.
-              </p>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-black">Never miss a transaction</h2>
+              <p className="text-lg text-gray-600 mb-6">Keep all your expenses in one place. Whether it's a coffee or a car payment, ExpenseFlow helps you stay on top of every purchase.</p>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,16 +205,28 @@ export default function LandingPage() {
                   </svg>
                   Smart search and filters
                 </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Secure cloud backup
-                </li>
               </ul>
             </div>
-            <div className="bg-gray-200 rounded-2xl h-96 flex items-center justify-center border border-gray-300">
-              <span className="text-gray-500 text-lg">Your Image Here</span>
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-semibold mb-4 text-black">Spending by Category</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={samplePieData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.name}: $${entry.value}`}
+                    outerRadius={100}
+                    dataKey="value"
+                  >
+                    {samplePieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
@@ -227,9 +236,7 @@ export default function LandingPage() {
       <section id="features" className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
-              Built for modern finance
-            </div>
+            <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">Built for modern finance</div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-black">Everything you need</h2>
             <p className="text-lg text-gray-600">Powerful features in a simple package</p>
           </div>
@@ -272,9 +279,7 @@ export default function LandingPage() {
       <section id="pricing" className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
-              Transparent pricing
-            </div>
+            <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">Transparent pricing</div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-black">Simple pricing</h2>
             <p className="text-lg text-gray-600">Choose the plan that fits your needs</p>
           </div>
@@ -282,11 +287,9 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h3 className="text-xl font-semibold mb-2 text-black">Free</h3>
-              <div className="text-4xl font-bold mb-6 text-black">
-                $0<span className="text-base font-normal text-gray-600">/month</span>
-              </div>
+              <div className="text-4xl font-bold mb-6 text-black">$0<span className="text-base font-normal text-gray-600">/month</span></div>
               <ul className="space-y-3 mb-8 text-sm">
-                <li className="flex items-center gap-2 text-gray-700">
+                 <li className="flex items-center gap-2 text-gray-700">
                   <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -317,21 +320,15 @@ export default function LandingPage() {
                   CSV export
                 </li>
               </ul>
-              <a href="/signup" className="block w-full text-center border border-gray-300 text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors">
-                Start Free
-              </a>
+              <a href="/signup" className="block w-full text-center border border-gray-300 text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors">Start Free</a>
             </div>
 
             <div className="bg-black text-white rounded-2xl p-8 relative ring-2 ring-black">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-1 rounded-full text-xs font-medium">
-                Most Popular
-              </div>
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-1 rounded-full text-xs font-medium">Most Popular</div>
               <h3 className="text-xl font-semibold mb-2">Pro</h3>
-              <div className="text-4xl font-bold mb-6">
-                $4.99<span className="text-base font-normal opacity-80">/month</span>
-              </div>
+              <div className="text-4xl font-bold mb-6">$4.99<span className="text-base font-normal opacity-80">/month</span></div>
               <ul className="space-y-3 mb-8 text-sm">
-                <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -362,18 +359,14 @@ export default function LandingPage() {
                   CSV export
                 </li>
               </ul>
-              <a href="/signup" className="block w-full text-center bg-white text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">
-                Get Started
-              </a>
+              <a href="/signup" className="block w-full text-center bg-white text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">Get Started</a>
             </div>
 
             <div className="bg-white rounded-2xl p-8 border border-gray-200">
               <h3 className="text-xl font-semibold mb-2 text-black">Business</h3>
-              <div className="text-4xl font-bold mb-6 text-black">
-                $14.99<span className="text-base font-normal text-gray-600">/month</span>
-              </div>
+              <div className="text-4xl font-bold mb-6 text-black">$14.99<span className="text-base font-normal text-gray-600">/month</span></div>
               <ul className="space-y-3 mb-8 text-sm">
-                <li className="flex items-center gap-2 text-gray-700">
+                         <li className="flex items-center gap-2 text-gray-700">
                   <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -404,35 +397,24 @@ export default function LandingPage() {
                   CSV export
                 </li>
               </ul>
-              <a href="/signup" className="block w-full text-center border border-gray-300 text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors">
-                Get Started
-              </a>
+              <a href="/signup" className="block w-full text-center border border-gray-300 text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors">Get Started</a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials - Infinite Scroll Carousel */}
+      {/* Testimonials */}
       <section id="testimonials" className="py-24 px-6 overflow-hidden">
         <div className="max-w-6xl mx-auto mb-16 text-center">
-          <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
-            Loved by thousands
-          </div>
+          <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">Loved by thousands</div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-black">What users say</h2>
           <p className="text-lg text-gray-600">Join thousands of satisfied users</p>
         </div>
 
         <div className="relative">
-          <div 
-            ref={scrollContainerRef}
-            className="flex gap-6 overflow-hidden"
-            style={{ scrollBehavior: 'auto' }}
-          >
+          <div ref={scrollContainerRef} className="flex gap-6 overflow-hidden" style={{ scrollBehavior: 'auto' }}>
             {[...testimonials, ...testimonials].map((testimonial, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-2xl p-8 border border-gray-200 flex-shrink-0 w-[400px]"
-              >
+              <div key={index} className="bg-white rounded-2xl p-8 border border-gray-200 flex-shrink-0 w-[400px]">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white text-sm font-semibold">
                     <img src={testimonial.image} width={50} height={50}/>
@@ -442,9 +424,7 @@ export default function LandingPage() {
                     <div className="text-sm text-gray-600">{testimonial.role}</div>
                   </div>
                 </div>
-                <p className="text-gray-700 leading-relaxed">
-                  "{testimonial.text}"
-                </p>
+                <p className="text-gray-700 leading-relaxed">"{testimonial.text}"</p>
               </div>
             ))}
           </div>
@@ -454,22 +434,14 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="py-24 px-6">
         <div className="max-w-4xl mx-auto text-center bg-black text-white rounded-3xl p-16">
-          <div className="inline-block mb-4 px-4 py-1.5 bg-white/10 rounded-full text-sm">
-            Get started today
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Start tracking today
-          </h2>
-          <p className="text-lg opacity-90 mb-8 text-gray-300">
-            Join thousands taking control of their finances.
-          </p>
-          <a href="/signup" className="inline-block bg-white text-black px-8 py-3 rounded-full text-base font-medium hover:bg-gray-100 transition-colors">
-            Get Started Free
-          </a>
+          <div className="inline-block mb-4 px-4 py-1.5 bg-white/10 rounded-full text-sm">Get started today</div>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">Start tracking today</h2>
+          <p className="text-lg opacity-90 mb-8 text-gray-300">Join thousands taking control of their finances.</p>
+          <a href="/signup" className="inline-block bg-white text-black px-8 py-3 rounded-full text-base font-medium hover:bg-gray-100 transition-colors">Get Started Free</a>
         </div>
       </section>
 
-      {/* Footer - Black Background */}
+      {/* Footer */}
       <footer className="bg-black text-white py-12 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
@@ -488,7 +460,6 @@ export default function LandingPage() {
               <h4 className="font-semibold mb-4 text-sm">Company</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
               </ul>
             </div>
             <div>
