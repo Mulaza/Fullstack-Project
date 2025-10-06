@@ -1,36 +1,284 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<h1 align="center">ExpenseFlow</h1>
 
-## Getting Started
+<p align="center">
+  <br>
+  <img src="./public/readme-files/md-logo.png" alt="ExpenseFlow Logo" width="100"/>
+  <br>  <br> 
+</p>
 
-First, run the development server:
+A modern, minimalist expense tracking application built with Next.js and Supabase. Track your expenses, visualize spending patterns, and export your financial data with ease.
+
+## Screenshots
+
+![Landing Page](./public/readme-files/screenshot-1.png)
+
+![Dashbaord Page](./public/readme-files/screenshot-2.png)
+
+![Dashbaord Page](./public/readme-files/screenshot-3.png)
+---
+
+## Features
+
+- **User Authentication** - Secure signup/login with email and Google OAuth
+- **Expense Management** - Add, edit, and delete expenses with categories
+- **Visual Analytics** - Interactive charts showing spending patterns
+- **Multi-tier Plans** - Free, Pro, and Business subscription tiers
+- **PDF Export** - Generate professional PDF reports (Pro & Business)
+- **CSV Export** - Download expense data as CSV (Business only)
+- **Responsive Design** - Beautiful UI that works on all devices
+- **Real-time Updates** - Instant data synchronization with Supabase
+
+---
+
+## Tech Stack
+
+- **Framework:** Next.js 14+ (App Router)
+- **Database:** Supabase (PostgreSQL)
+- **Authentication:** Supabase Auth
+- **Styling:** Tailwind CSS
+- **Charts:** Recharts
+- **PDF Generation:** jsPDF + jspdf-autotable
+- **Language:** TypeScript
+
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** (v18.0.0 or higher)
+- **npm** or **yarn** or **pnpm**
+- **Git**
+- A **Supabase** account ([Sign up here](https://supabase.com))
+
+---
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/expenseflow.git
+cd expenseflow
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+### 3. Set Up Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```bash
+touch .env.local
+```
+
+Add the following environment variables:
+
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+**How to get these values:**
+
+1. Go to your [Supabase Dashboard](https://app.supabase.com)
+2. Select your project (or create a new one)
+3. Navigate to **Settings** → **API**
+4. Copy the following:
+   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+   - **anon public** key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **service_role** key → `SUPABASE_SERVICE_ROLE_KEY`
+
+---
+
+## Database Setup
+
+### 1. Create Tables
+
+Run the following SQL in your Supabase SQL Editor:
+
+```sql
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create expenses table
+CREATE TABLE IF NOT EXISTS expenses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL,
+  date DATE NOT NULL,
+  category TEXT NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create user_subscriptions table
+CREATE TABLE IF NOT EXISTS user_subscriptions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
+  plan TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'business')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable Row Level Security
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- Policies for expenses (user can only access their own)
+CREATE POLICY "Users can view their own expenses"
+  ON expenses FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own expenses"
+  ON expenses FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own expenses"
+  ON expenses FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own expenses"
+  ON expenses FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Policies for user_subscriptions
+CREATE POLICY "Users can view their own subscription"
+  ON user_subscriptions FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own subscription"
+  ON user_subscriptions FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own subscription"
+  ON user_subscriptions FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- Auto-create subscription on user signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.user_subscriptions (user_id, plan)
+  VALUES (NEW.id, 'free');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
+```
+
+### 2. Set Up Authentication
+
+1. In Supabase Dashboard, go to **Authentication** → **Providers**
+2. Enable **Email** provider (enabled by default)
+3. (Optional) Enable **Google** OAuth:
+   - Follow [Supabase Google OAuth guide](https://supabase.com/docs/guides/auth/social-login/auth-google)
+   - Add your Google Client ID and Secret
+
+### 3. Configure Redirect URLs
+
+In **Authentication** → **URL Configuration**, add:
+
+```
+Site URL: http://localhost:3000
+Redirect URLs:
+  - http://localhost:3000/dashboard
+  - http://localhost:3000/auth/callback
+```
+
+---
+
+## Running the Application
+
+### Development Mode
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Production Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+# or
+yarn run build
+yarn start
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Usage
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Creating an Account
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Navigate to `/signup`
+2. Enter your name, email, and password
+3. Agree to Terms of Service
+4. Click "Create Account"
 
-## Deploy on Vercel
+### Adding Expenses
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Log in to your dashboard
+2. Click "+ Add Expense"
+3. Fill in the details (title, amount, date, category, notes)
+4. Click "Add Expense"
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Viewing Analytics
+
+- Switch between **Charts View** and **Table View** using the sidebar icons
+- Charts View shows:
+  - Total expenses summary
+  - Spending over time (line chart)
+  - Category breakdown (pie chart)
+  - Bar chart comparison
+
+### Exporting Data
+
+**PDF Export** (Pro & Business plans):
+- Click "Export PDF" in the header
+- A professional PDF report will download
+
+**CSV Export** (Business plan only):
+- Click "Export CSV" in the header
+- A CSV file with all expense data will download
+
+### Upgrading Plans
+
+1. Click "Upgrade" or "Change Plan" in the header
+2. Select your desired plan (Free, Pro, Business)
+3. Click "Upgrade Now"
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Made with ❤️ by Mulaza Jacinto**

@@ -7,7 +7,7 @@ const testimonials = [
     text: "ExpenseFlow changed my financial life. I've been tracking my expenses for 90 days straight and saved 30% more than before!",
     name: "Sarah Chen",
     role: "Product Designer",
-    image: "SC"
+    image: "../public/faces/face-1.png"
   },
   {
     text: "Finally, an expense tracker that doesn't overwhelm me. Simple, beautiful, and it just works. Best decision I made this year.",
@@ -31,7 +31,7 @@ const testimonials = [
     text: "As a freelancer, tracking business expenses used to be a nightmare. ExpenseFlow makes it effortless.",
     name: "Lisa Thompson",
     role: "Freelance Designer",
-    image: "LT"
+    image: "../public/faces/face-1.png"
   }
 ];
 
@@ -140,9 +140,9 @@ export default function LandingPage() {
       </section>
 
       {/* Visual Section 1 - Image Left, Text Right */}
-      <section className="py-24 px-6 bg-gray-50">
+      <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="inline-block mb-8 px-4 py-1.5 bg-white rounded-full text-sm text-gray-700 border border-gray-200">
+          <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
             Powerful insights at your fingertips
           </div>
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -224,10 +224,10 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-24 px-6 bg-gray-50">
+      <section id="features" className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-block mb-4 px-4 py-1.5 bg-white rounded-full text-sm text-gray-700 border border-gray-200">
+            <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
               Built for modern finance
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-black">Everything you need</h2>
@@ -389,9 +389,9 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials - Infinite Scroll Carousel */}
-      <section id="testimonials" className="py-24 px-6 bg-gray-50 overflow-hidden">
+      <section id="testimonials" className="py-24 px-6 overflow-hidden">
         <div className="max-w-6xl mx-auto mb-16 text-center">
-          <div className="inline-block mb-4 px-4 py-1.5 bg-white rounded-full text-sm text-gray-700 border border-gray-200">
+          <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">
             Loved by thousands
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-black">What users say</h2>
@@ -411,7 +411,7 @@ export default function LandingPage() {
               >
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    {testimonial.image}
+                    <img src={"/public/faces/face-1.png"} width={50} height={50}/>
                   </div>
                   <div>
                     <div className="font-semibold text-black">{testimonial.name}</div>
