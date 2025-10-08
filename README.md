@@ -305,7 +305,7 @@ END $$;
    - Go to [GitHub Developer Settings → OAuth Apps](https://github.com/settings/developers).  
    - Click **“New OAuth App”** and fill in the details:  
      - **Application Name:** your app name (e.g., *ExpenseFlow*)  
-     - **Homepage URL:** your app URL (or `http://localhost:3000` for local development)  
+     - **Homepage URL:** your app URL (or `http://localhost:3000` for local development or your own local host port)  
      - **Authorization Callback URL:**  
        ```
        https://<your-supabase-project-ref>.supabase.co/auth/v1/callback
@@ -319,10 +319,7 @@ END $$;
 In **Authentication** → **URL Configuration**, add:
 
 ```
-Site URL: http://localhost:3000
-Redirect URLs:
-  - http://localhost:3000/dashboard
-  - http://localhost:3000/auth/callback
+Site URL: http://localhost:3000 (or your own local host port)
 ```
 
 ---
