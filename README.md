@@ -75,8 +75,7 @@ cd expenseflow
 npm install
 # or
 yarn install
-# or
-pnpm install
+
 ```
 
 ### 3. Set Up Environment Variables
