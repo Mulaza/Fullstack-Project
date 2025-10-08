@@ -1,7 +1,6 @@
+// src/app/api/subscriptions/upgrade/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/app/lib/supabase-server';
-
-const VALID_PLANS = ['free', 'pro', 'business'];
 
 async function getUserFromRequest(request: NextRequest) {
   const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -22,16 +21,30 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { plan } = await request.json();
+    const { planName } = await request.json();
 
-    if (!plan || !VALID_PLANS.includes(plan)) {
+    if (!planName) {
+      return NextResponse.json(
+        { error: 'Plan name is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get the plan by name
+    const { data: plan, error: planError } = await supabaseAdmin
+      .from('subscription_plans')
+      .select('*')
+      .eq('name', planName)
+      .single();
+
+    if (planError || !plan) {
       return NextResponse.json(
         { error: 'Invalid plan selected' },
         { status: 400 }
       );
     }
 
-    // First check if subscription exists
+    // Check if subscription exists
     const { data: existingSub, error: checkError } = await supabaseAdmin
       .from('user_subscriptions')
       .select('*')
@@ -54,7 +67,7 @@ export async function POST(request: NextRequest) {
         .from('user_subscriptions')
         .insert([{
           user_id: user.id,
-          plan,
+          plan_id: plan.id,
           updated_at: new Date().toISOString()
         }])
         .select()
@@ -67,7 +80,7 @@ export async function POST(request: NextRequest) {
       const result = await supabaseAdmin
         .from('user_subscriptions')
         .update({ 
-          plan, 
+          plan_id: plan.id,
           updated_at: new Date().toISOString() 
         })
         .eq('user_id', user.id)
@@ -96,10 +109,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get full subscription details with plan info
+    const { data: subscriptionDetails } = await supabaseAdmin
+      .from('user_subscription_details')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
     return NextResponse.json({
       success: true,
-      subscription: data,
-      message: `Successfully upgraded to ${plan} plan`
+      subscription: subscriptionDetails,
+      message: `Successfully upgraded to ${plan.display_name} plan`
     });
   } catch (error: any) {
     console.error('Unexpected error:', error);

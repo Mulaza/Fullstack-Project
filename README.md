@@ -5,7 +5,15 @@
   <h1 align="center">ExpenseFlow</h1>
 </p>
 
-A modern, minimalist expense tracking application built with Next.js and Supabase. Track your expenses, visualize spending patterns, and export your financial data with ease.
+ExpenseFlow is a minimalist expense tracking application built with Next.js and Supabase. Track your expenses, visualize spending patterns, and export your financial data with ease.
+
+---
+
+## Task Requirements
+
+Read the requirements for the take home task [here](./public/readme-files/requirements.md).
+
+---
 
 ## Screenshots
 
@@ -18,15 +26,12 @@ A modern, minimalist expense tracking application built with Next.js and Supabas
 
 ## Features
 
-- **User Authentication** - Secure signup/login with email and Google OAuth
+- **User Authentication** - Secure signup/login with email
 - **Expense Management** - Add, edit, and delete expenses with categories
 - **Visual Analytics** - Interactive charts showing spending patterns
 - **Multi-tier Plans** - Free, Pro, and Business subscription tiers
 - **PDF Export** - Generate professional PDF reports (Pro & Business)
 - **CSV Export** - Download expense data as CSV (Business only)
-- **Responsive Design** - Beautiful UI that works on all devices
-- **Real-time Updates** - Instant data synchronization with Supabase
-
 ---
 
 ## Tech Stack
@@ -106,84 +111,197 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 Run the following SQL in your Supabase SQL Editor:
 
-```sql
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+Learn more about the [Database Schema Design](./public/readme-files/schema.md)
 
--- Create expenses table
-CREATE TABLE IF NOT EXISTS expenses (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+```sql
+-- ExpenseFlow Database Schema - No Trigger Version
+-- Run this in Supabase SQL Editor
+
+-- STEP 1: Drop the problematic trigger
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user();
+
+-- STEP 2: Drop and recreate tables with correct structure
+DROP TABLE IF EXISTS expenses CASCADE;
+DROP TABLE IF EXISTS user_subscriptions CASCADE;
+DROP TABLE IF EXISTS subscription_plans CASCADE;
+DROP VIEW IF EXISTS user_subscription_details CASCADE;
+
+-- 3. Create subscription_plans table
+CREATE TABLE subscription_plans (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  display_name TEXT NOT NULL,
+  price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+  features JSONB NOT NULL DEFAULT '[]'::jsonb,
+  can_export_pdf BOOLEAN NOT NULL DEFAULT false,
+  can_export_csv BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Insert default subscription plans
+INSERT INTO subscription_plans (name, display_name, price, features, can_export_pdf, can_export_csv) VALUES
+  ('free', 'Free', 0.00, 
+   '["Track unlimited expenses", "Basic analytics", "7 categories"]'::jsonb,
+   false, false),
+  ('pro', 'Pro', 4.99,
+   '["Track unlimited expenses", "Basic analytics", "7 categories", "PDF export"]'::jsonb,
+   true, false),
+  ('business', 'Business', 14.99,
+   '["Track unlimited expenses", "Advanced analytics", "7 categories", "PDF export", "CSV export"]'::jsonb,
+   true, true);
+
+-- 4. Create user_subscriptions table
+CREATE TABLE user_subscriptions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL,
+  plan_id UUID REFERENCES subscription_plans(id) ON DELETE RESTRICT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id)
+);
+
+-- Add indexes
+CREATE INDEX idx_user_subscriptions_user_id ON user_subscriptions(user_id);
+CREATE INDEX idx_user_subscriptions_plan_id ON user_subscriptions(plan_id);
+
+-- 5. Create expenses table
+CREATE TABLE expenses (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL,
   title TEXT NOT NULL,
-  amount DECIMAL(10, 2) NOT NULL,
+  amount NUMERIC(10, 2) NOT NULL,
   date DATE NOT NULL,
   category TEXT NOT NULL,
   notes TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- Create user_subscriptions table
-CREATE TABLE IF NOT EXISTS user_subscriptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
-  plan TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'business')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Add indexes
+CREATE INDEX idx_expenses_user_id ON expenses(user_id);
+CREATE INDEX idx_expenses_date ON expenses(date);
+CREATE INDEX idx_expenses_category ON expenses(category);
 
--- Enable Row Level Security
-ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+-- 6. Enable RLS
+ALTER TABLE subscription_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 
--- Policies for expenses (user can only access their own)
+-- 7. RLS Policies for subscription_plans (anyone can view)
+CREATE POLICY "Anyone can view subscription plans"
+  ON subscription_plans FOR SELECT
+  USING (true);
+
+-- 8. RLS Policies for user_subscriptions
+-- Allow service_role full access
+CREATE POLICY "Service role has full access to subscriptions"
+  ON user_subscriptions FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
+-- Allow authenticated users to view their own
+CREATE POLICY "Users can view their own subscription"
+  ON user_subscriptions FOR SELECT
+  TO authenticated
+  USING (auth.uid()::text = user_id::text);
+
+-- Allow authenticated users to update their own
+CREATE POLICY "Users can update their own subscription"
+  ON user_subscriptions FOR UPDATE
+  TO authenticated
+  USING (auth.uid()::text = user_id::text)
+  WITH CHECK (auth.uid()::text = user_id::text);
+
+-- 9. RLS Policies for expenses
+-- Allow service_role full access
+CREATE POLICY "Service role has full access to expenses"
+  ON expenses FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
+-- Allow authenticated users full access to their own
 CREATE POLICY "Users can view their own expenses"
   ON expenses FOR SELECT
-  USING (auth.uid() = user_id);
+  TO authenticated
+  USING (auth.uid()::text = user_id::text);
 
 CREATE POLICY "Users can insert their own expenses"
   ON expenses FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  TO authenticated
+  WITH CHECK (auth.uid()::text = user_id::text);
 
 CREATE POLICY "Users can update their own expenses"
   ON expenses FOR UPDATE
-  USING (auth.uid() = user_id);
+  TO authenticated
+  USING (auth.uid()::text = user_id::text)
+  WITH CHECK (auth.uid()::text = user_id::text);
 
 CREATE POLICY "Users can delete their own expenses"
   ON expenses FOR DELETE
-  USING (auth.uid() = user_id);
+  TO authenticated
+  USING (auth.uid()::text = user_id::text);
 
--- Policies for user_subscriptions
-CREATE POLICY "Users can view their own subscription"
-  ON user_subscriptions FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own subscription"
-  ON user_subscriptions FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own subscription"
-  ON user_subscriptions FOR UPDATE
-  USING (auth.uid() = user_id);
-
--- Auto-create subscription on user signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
+-- 10. Create updated_at trigger function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.user_subscriptions (user_id, plan)
-  VALUES (NEW.id, 'free');
+  NEW.updated_at = TIMEZONE('utc'::text, NOW());
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- 11. Add updated_at triggers
+CREATE TRIGGER update_subscription_plans_updated_at
+  BEFORE UPDATE ON subscription_plans
+  FOR EACH ROW 
+  EXECUTE FUNCTION update_updated_at_column();
 
--- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
-CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
-CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
+CREATE TRIGGER update_user_subscriptions_updated_at
+  BEFORE UPDATE ON user_subscriptions
+  FOR EACH ROW 
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_expenses_updated_at
+  BEFORE UPDATE ON expenses
+  FOR EACH ROW 
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- 12. Create helpful view
+CREATE VIEW user_subscription_details AS
+SELECT 
+  us.id,
+  us.user_id,
+  sp.id as plan_id,
+  sp.name as plan_name,
+  sp.display_name,
+  sp.price,
+  sp.features,
+  sp.can_export_pdf,
+  sp.can_export_csv,
+  us.created_at as subscribed_at,
+  us.updated_at as last_updated
+FROM user_subscriptions us
+JOIN subscription_plans sp ON us.plan_id = sp.id;
+
+-- 13. Grant necessary permissions
+GRANT ALL ON subscription_plans TO service_role;
+GRANT ALL ON user_subscriptions TO service_role;
+GRANT ALL ON expenses TO service_role;
+GRANT SELECT ON subscription_plans TO authenticated;
+GRANT SELECT ON user_subscription_details TO authenticated, anon;
+
+-- 14. Verify setup
+DO $$
+DECLARE
+  plan_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO plan_count FROM subscription_plans;
+  RAISE NOTICE 'Setup complete! Found % subscription plans', plan_count;
+END $$;
 ```
 
 ### 2. Set Up Authentication
@@ -280,4 +398,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ by Mulaza Jacinto**
+**Made by Mulaza Jacinto**

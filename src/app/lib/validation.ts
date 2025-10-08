@@ -1,5 +1,35 @@
 // src/app/lib/validation.ts
 
+// Types for database schema
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  display_name: string;
+  price: number;
+  features: string[];
+  can_export_pdf: boolean;
+  can_export_csv: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserSubscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserSubscriptionDetails extends UserSubscription {
+  plan_name: string;
+  display_name: string;
+  price: number;
+  features: string[];
+  can_export_pdf: boolean;
+  can_export_csv: boolean;
+}
+
 export const USERNAME_MIN_LENGTH = 2;
 export const USERNAME_MAX_LENGTH = 50;
 export const PASSWORD_MIN_LENGTH = 8;

@@ -1,8 +1,6 @@
+// src/app/api/exports/csv/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/app/lib/supabase-server';
-
-// CSV export is ONLY for Business plan
-const PLANS_WITH_CSV = ['business'];
 
 async function getUserFromRequest(request: NextRequest) {
   const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -23,9 +21,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Get user subscription with plan details
     const { data: subscription, error: subError } = await supabaseAdmin
-      .from('user_subscriptions')
-      .select('plan')
+      .from('user_subscription_details')
+      .select('*')
       .eq('user_id', user.id)
       .single();
 
@@ -36,12 +35,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!PLANS_WITH_CSV.includes(subscription.plan)) {
+    // Check if user's plan allows CSV export
+    if (!subscription.can_export_csv) {
       return NextResponse.json(
         {
           error: 'CSV export requires Business plan',
           requiresUpgrade: true,
-          currentPlan: subscription.plan
+          currentPlan: subscription.plan_name
         },
         { status: 403 }
       );
@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error: any) {
+    console.error('CSV export error:', error);
     return NextResponse.json(
       { error: error.message },
       { status: 500 }

@@ -3,49 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-const plans = [
-  { 
-    name: 'free', 
-    displayName: 'Free', 
-    price: 0, 
-    features: [
-      'Track unlimited expenses',
-      'View basic analytics',
-      '7 categories',
-      'Charts & graphs'
-    ] 
-  },
-  { 
-    name: 'pro', 
-    displayName: 'Pro', 
-    price: 4.99, 
-    features: [
-      'Everything in Free',
-      'Export to PDF',
-      'Advanced analytics',
-      'Priority support',
-      'Custom categories'
-    ] 
-  },
-  { 
-    name: 'business', 
-    displayName: 'Business', 
-    price: 14.99, 
-    features: [
-      'Everything in Pro',
-      'Export to CSV',
-      'Team collaboration',
-      'API access',
-      'Custom branding',
-      'Dedicated support'
-    ] 
-  }
-];
-
 export default function SubscriptionsPage() {
   const [user, setUser] = useState(null);
-  const [currentPlan, setCurrentPlan] = useState('free');
-  const [selectedPlan, setSelectedPlan] = useState('pro');
+  const [plans, setPlans] = useState([]);
+  const [currentSubscription, setCurrentSubscription] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
 
@@ -60,26 +22,42 @@ export default function SubscriptionsPage() {
       return;
     }
     setUser(user);
-    await fetchUserPlan(user.id);
+    await fetchPlans();
+    await fetchUserSubscription(user.id);
   };
 
-  const fetchUserPlan = async (userId) => {
+  const fetchPlans = async () => {
+    const { data, error } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .order('price', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching plans:', error);
+    } else if (data) {
+      setPlans(data);
+    }
+  };
+
+  const fetchUserSubscription = async (userId) => {
     setLoading(true);
+    
+    // Use the view to get subscription with plan details
     const { data } = await supabase
-      .from('user_subscriptions')
-      .select('plan')
+      .from('user_subscription_details')
+      .select('*')
       .eq('user_id', userId)
       .single();
     
     if (data) {
-      setCurrentPlan(data.plan);
-      setSelectedPlan(data.plan);
+      setCurrentSubscription(data);
+      setSelectedPlan(data.plan_id);
     }
     setLoading(false);
   };
 
   const handleUpgradePlan = async () => {
-    if (selectedPlan === currentPlan) {
+    if (selectedPlan === currentSubscription?.plan_id) {
       return;
     }
 
@@ -88,13 +66,16 @@ export default function SubscriptionsPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
+      // Find the selected plan's name
+      const selectedPlanData = plans.find(p => p.id === selectedPlan);
+      
       const response = await fetch('/api/subscriptions/upgrade', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({ plan: selectedPlan })
+        body: JSON.stringify({ planName: selectedPlanData.name })
       });
 
       const data = await response.json();
@@ -105,7 +86,7 @@ export default function SubscriptionsPage() {
         return;
       }
 
-      setCurrentPlan(selectedPlan);
+      setCurrentSubscription(data.subscription);
       setUpgrading(false);
       alert(data.message);
     } catch (error) {
@@ -148,7 +129,7 @@ export default function SubscriptionsPage() {
             <h1 className="text-xl font-semibold text-black">Subscription Plans</h1>
           </div>
           <span className="px-4 py-2 bg-gray-100 text-black rounded-full text-sm font-medium capitalize">
-            Current: {currentPlan}
+            Current: {currentSubscription?.plan_name || 'free'}
           </span>
         </div>
       </header>
@@ -160,60 +141,69 @@ export default function SubscriptionsPage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              onClick={() => setSelectedPlan(plan.name)}
-              className={`bg-white p-8 rounded-2xl cursor-pointer transition-all ${
-                selectedPlan === plan.name
-                  ? 'border-2 border-black shadow-lg'
-                  : 'border-2 border-gray-200 hover:border-gray-300'
-              } ${currentPlan === plan.name ? 'ring-2 ring-black ring-offset-4' : ''}`}
-            >
-              {currentPlan === plan.name && (
-                <div className="inline-block mb-3 px-3 py-1 bg-black text-white rounded-full text-xs font-semibold">
-                  CURRENT PLAN
-                </div>
-              )}
-              <div className="mb-6">
-                <div className="text-2xl font-bold text-black mb-2">{plan.displayName}</div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-black">${plan.price}</span>
-                  <span className="text-gray-600">/month</span>
-                </div>
-              </div>
-              <ul className="space-y-3 mb-8">
-                {plan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm text-gray-700">
-                    <svg className="w-5 h-5 text-black mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mx-auto ${
-                selectedPlan === plan.name
-                  ? 'border-black bg-black'
-                  : 'border-gray-300'
-              }`}>
-                {selectedPlan === plan.name && (
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
+          {plans.map((plan) => {
+            const features = Array.isArray(plan.features) ? plan.features : [];
+            const isCurrentPlan = currentSubscription?.plan_id === plan.id;
+            const isSelected = selectedPlan === plan.id;
+
+            return (
+              <div
+                key={plan.id}
+                onClick={() => setSelectedPlan(plan.id)}
+                className={`bg-white p-8 rounded-2xl cursor-pointer transition-all ${
+                  isSelected
+                    ? 'border-2 border-black shadow-lg'
+                    : 'border-2 border-gray-200 hover:border-gray-300'
+                } ${isCurrentPlan ? 'ring-2 ring-black ring-offset-4' : ''}`}
+              >
+                {isCurrentPlan && (
+                  <div className="inline-block mb-3 px-3 py-1 bg-black text-white rounded-full text-xs font-semibold">
+                    CURRENT PLAN
+                  </div>
                 )}
+                <div className="mb-6">
+                  <div className="text-2xl font-bold text-black mb-2">{plan.display_name}</div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-black">${plan.price}</span>
+                    <span className="text-gray-600">/month</span>
+                  </div>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  {features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-sm text-gray-700">
+                      <svg className="w-5 h-5 text-black mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mx-auto ${
+                  isSelected
+                    ? 'border-black bg-black'
+                    : 'border-gray-300'
+                }`}>
+                  {isSelected && (
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="max-w-md mx-auto">
           <button
             onClick={handleUpgradePlan}
-            disabled={selectedPlan === currentPlan || upgrading}
+            disabled={selectedPlan === currentSubscription?.plan_id || upgrading}
             className="w-full bg-black text-white py-4 rounded-full font-semibold text-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {selectedPlan === currentPlan ? 'Current Plan' : `Switch to ${plans.find(p => p.name === selectedPlan)?.displayName}`}
+            {selectedPlan === currentSubscription?.plan_id 
+              ? 'Current Plan' 
+              : `Switch to ${plans.find(p => p.id === selectedPlan)?.display_name || 'Plan'}`
+            }
           </button>
           <p className="text-center text-sm text-gray-500 mt-4">
             Changes take effect immediately. No hidden fees.

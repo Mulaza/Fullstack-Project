@@ -1,7 +1,6 @@
+// src/app/api/exports/pdf/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-server';
-
-const PLANS_WITH_PDF = ['pro', 'business'];
+import { supabaseAdmin } from '@/app/lib/supabase-server';
 
 async function getUserFromRequest(request: NextRequest) {
   const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -22,9 +21,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Get user subscription with plan details
     const { data: subscription, error: subError } = await supabaseAdmin
-      .from('user_subscriptions')
-      .select('plan')
+      .from('user_subscription_details')
+      .select('*')
       .eq('user_id', user.id)
       .single();
 
@@ -35,12 +35,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!PLANS_WITH_PDF.includes(subscription.plan)) {
+    // Check if user's plan allows PDF export
+    if (!subscription.can_export_pdf) {
       return NextResponse.json(
         {
           error: 'PDF export requires Pro or Business plan',
           requiresUpgrade: true,
-          currentPlan: subscription.plan
+          currentPlan: subscription.plan_name
         },
         { status: 403 }
       );
@@ -69,10 +70,10 @@ export async function GET(request: NextRequest) {
   <meta charset="UTF-8">
   <style>
     body { font-family: Arial, sans-serif; margin: 40px; }
-    h1 { color: #00B67A; }
+    h1 { color: #000000; }
     .summary { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th { background: #00B67A; color: white; padding: 12px; text-align: left; }
+    th { background: #000000; color: white; padding: 12px; text-align: left; }
     td { padding: 10px; border-bottom: 1px solid #ddd; }
     tr:hover { background: #f9f9f9; }
     .footer { margin-top: 40px; text-align: center; color: #666; font-size: 12px; }
@@ -123,6 +124,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error: any) {
+    console.error('PDF export error:', error);
     return NextResponse.json(
       { error: error.message },
       { status: 500 }

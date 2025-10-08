@@ -144,7 +144,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">Powerful insights at your fingertips</div>
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-2xl p-8 ">
               <h3 className="text-lg font-semibold mb-4 text-black">Your Spending Over Time</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={sampleLineData}>
@@ -207,7 +207,7 @@ export default function LandingPage() {
                 </li>
               </ul>
             </div>
-            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+            <div className="bg-white rounded-2xl p-8 ">
               <h3 className="text-lg font-semibold mb-4 text-black">Spending by Category</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>

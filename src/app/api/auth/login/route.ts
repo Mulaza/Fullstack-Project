@@ -1,3 +1,4 @@
+// src/app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/app/lib/supabase-server';
 
@@ -24,9 +25,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get user subscription with plan details using the view
     const { data: subscription } = await supabaseAdmin
-      .from('user_subscriptions')
-      .select('plan')
+      .from('user_subscription_details')
+      .select('*')
       .eq('user_id', data.user.id)
       .single();
 
@@ -34,7 +36,8 @@ export async function POST(request: NextRequest) {
       success: true,
       session: data.session,
       user: data.user,
-      plan: subscription?.plan || 'free'
+      plan: subscription?.plan_name || 'free',
+      subscription: subscription
     });
   } catch (error: any) {
     return NextResponse.json(

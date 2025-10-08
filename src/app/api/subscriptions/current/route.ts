@@ -1,3 +1,4 @@
+// src/app/api/subscriptions/current/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/app/lib/supabase-server';
 
@@ -20,8 +21,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Use the view to get subscription details with plan info
     const { data, error } = await supabaseAdmin
-      .from('user_subscriptions')
+      .from('user_subscription_details')
       .select('*')
       .eq('user_id', user.id)
       .single();

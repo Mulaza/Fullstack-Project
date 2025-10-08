@@ -3,15 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '../lib/supabase';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 const categories = ['Food', 'Transport', 'Entertainment', 'Health', 'Shopping', 'Bills', 'Other'];
 
 export default function ExpenseDashboard() {
   const [expenses, setExpenses] = useState([]);
   const [user, setUser] = useState(null);
-  const [userPlan, setUserPlan] = useState('free');
+  const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -41,21 +39,76 @@ export default function ExpenseDashboard() {
       return;
     }
     setUser(user);
-    await fetchUserPlan(user.id);
+    await fetchUserSubscription(user.id);
     await fetchExpenses(user.id);
   };
 
-  const fetchUserPlan = async (userId) => {
-    const { data } = await supabase
-      .from('user_subscriptions')
-      .select('plan')
-      .eq('user_id', userId)
-      .single();
+
+const fetchUserSubscription = async (userId) => {
+  // First try to get existing subscription
+  const { data, error } = await supabase
+    .from('user_subscription_details')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') {
+    // PGRST116 is "not found" - that's okay, we'll create it
+    // Other errors are real problems
+    console.error('Error fetching subscription:', error);
+  }
+  
+  if (data) {
+    // Found existing subscription
+    setSubscription(data);
+    return;
+  }
+
+  // No subscription found - create one automatically
+  console.log('No subscription found, creating one...');
+  
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (data) {
-      setUserPlan(data.plan);
+    const response = await fetch('/api/subscriptions/ensure', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session?.access_token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const result = await response.json();
+
+    if (result.success && result.subscription) {
+      console.log('Subscription created successfully');
+      setSubscription(result.subscription);
+    } else {
+      console.error('Failed to create subscription');
+      // Set a default free subscription so the UI doesn't break
+      setSubscription({
+        plan_name: 'free',
+        display_name: 'Free',
+        can_export_pdf: false,
+        can_export_csv: false,
+        price: 0,
+        features: []
+      });
     }
-  };
+  } catch (err) {
+    console.error('Error auto-creating subscription:', err);
+    // Set a default free subscription so the UI doesn't break
+    setSubscription({
+      plan_name: 'free',
+      display_name: 'Free',
+      can_export_pdf: false,
+      can_export_csv: false,
+      price: 0,
+      features: []
+    });
+  }
+};
+
 
   const fetchExpenses = async (userId) => {
     setLoading(true);
@@ -180,8 +233,8 @@ export default function ExpenseDashboard() {
     setShowEditModal(true);
   };
 
-  const exportToPDF = () => {
-    if (!['pro', 'business'].includes(userPlan)) {
+  const exportToPDF = async () => {
+    if (!subscription?.can_export_pdf) {
       window.location.href = '/subscriptions';
       return;
     }
@@ -189,56 +242,45 @@ export default function ExpenseDashboard() {
     setActionLoading(true);
     setLoadingMessage('Generating PDF...');
 
-    setTimeout(() => {
-      const doc = new jsPDF();
-      const totalAmount = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
       
-      doc.setFontSize(24);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Expense Report', 14, 20);
-      
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Total Expenses: ${totalAmount.toFixed(2)}`, 14, 35);
-      doc.text(`Number of Transactions: ${expenses.length}`, 14, 42);
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 49);
-      
-      const tableData = expenses.map(exp => [
-        exp.date,
-        exp.title,
-        exp.category,
-        `${parseFloat(exp.amount).toFixed(2)}`,
-        exp.notes || '-'
-      ]);
-      
-      autoTable(doc, {
-        startY: 60,
-        head: [['Date', 'Title', 'Category', 'Amount', 'Notes']],
-        body: tableData,
-        theme: 'grid',
-        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
-        styles: { fontSize: 10 }
+      const response = await fetch('/api/exports/pdf', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        }
       });
-      
-      const pageCount = doc.internal.pages.length - 1;
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(10);
-        doc.setTextColor(128);
-        doc.text(
-          `Generated by ExpenseFlow | ${new Date().toISOString()}`,
-          14,
-          doc.internal.pageSize.height - 10
-        );
+
+      if (!response.ok) {
+        const error = await response.json();
+        if (error.requiresUpgrade) {
+          alert(error.error);
+          window.location.href = '/subscriptions';
+        } else {
+          alert('Error generating PDF: ' + error.error);
+        }
+        setActionLoading(false);
+        return;
       }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `expenses_${new Date().toISOString().split('T')[0]}.html`;
+      a.click();
+      window.URL.revokeObjectURL(url);
       
-      doc.save(`expenses_${new Date().toISOString().split('T')[0]}.pdf`);
       setActionLoading(false);
-    }, 1000);
+    } catch (error) {
+      alert('Error: ' + error.message);
+      setActionLoading(false);
+    }
   };
 
-  const exportToCSV = () => {
-    if (userPlan !== 'business') {
+  const exportToCSV = async () => {
+    if (!subscription?.can_export_csv) {
       window.location.href = '/subscriptions';
       return;
     }
@@ -246,22 +288,29 @@ export default function ExpenseDashboard() {
     setActionLoading(true);
     setLoadingMessage('Generating CSV...');
 
-    setTimeout(() => {
-      const headers = ['Title', 'Amount', 'Date', 'Category', 'Notes'];
-      const rows = expenses.map(exp => [
-        exp.title,
-        exp.amount,
-        exp.date,
-        exp.category,
-        exp.notes || ''
-      ]);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch('/api/exports/csv', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        }
+      });
 
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-      ].join('\n');
+      if (!response.ok) {
+        const error = await response.json();
+        if (error.requiresUpgrade) {
+          alert(error.error);
+          window.location.href = '/subscriptions';
+        } else {
+          alert('Error generating CSV: ' + error.error);
+        }
+        setActionLoading(false);
+        return;
+      }
 
-      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -270,7 +319,10 @@ export default function ExpenseDashboard() {
       window.URL.revokeObjectURL(url);
       
       setActionLoading(false);
-    }, 1000);
+    } catch (error) {
+      alert('Error: ' + error.message);
+      setActionLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -324,8 +376,9 @@ export default function ExpenseDashboard() {
     return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   };
 
-  const canExportPDF = () => ['pro', 'business'].includes(userPlan);
-  const canExportCSV = () => userPlan === 'business';
+  const canExportPDF = () => subscription?.can_export_pdf || false;
+  const canExportCSV = () => subscription?.can_export_csv || false;
+  const userPlan = subscription?.plan_name || 'free';
 
   if (loading) {
     return (
