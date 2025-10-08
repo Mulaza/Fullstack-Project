@@ -126,7 +126,7 @@ export default function SubscriptionsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </a>
-            <h1 className="text-xl font-semibold text-black">Subscription Plans</h1>
+            <h1 className="text-xl font-semibold text-black">Dashboard</h1>
           </div>
           <span className="px-4 py-2 bg-gray-100 text-black rounded-full text-sm font-medium capitalize">
             Current: {currentSubscription?.plan_name || 'free'}

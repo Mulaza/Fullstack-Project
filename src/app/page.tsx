@@ -129,7 +129,7 @@ export default function LandingPage() {
       <section className="min-h-screen flex items-center justify-center px-6 pt-16">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-block mb-4 px-4 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700">Smart expense tracking for everyone</div>
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight text-black tracking-tight">Finances made<br />simple</h1>
+          <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight text-black tracking-tight">Expense Tracking<br />Made Simple</h1>
           <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">Track expenses, visualize spending patterns, and take control of your financial future with ExpenseFlow.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="/signup" className="bg-black text-white px-8 py-3 rounded-full text-base font-medium hover:bg-gray-800 transition-colors">Get Started Free</a>

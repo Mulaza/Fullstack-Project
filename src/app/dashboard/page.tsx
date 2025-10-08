@@ -557,7 +557,7 @@ const fetchUserSubscription = async (userId) => {
                 </div>
 
                 <div className="bg-white rounded-xl p-6 border border-gray-200">
-                  <h3 className="text-base font-semibold mb-4 text-black">By Category</h3>
+                  <h3 className="text-base font-semibold mb-4 text-black">Expense Categories</h3>
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
@@ -580,8 +580,10 @@ const fetchUserSubscription = async (userId) => {
               </div>
 
               {/* Top 5 Biggest Expenses */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
               {top5Expenses.length > 0 && (
-                <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
+                <div className="bg-white rounded-xl p-6 border border-gray-200">
                   <h3 className="text-base font-semibold mb-4 text-black">Top 5 Biggest Expenses</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={top5Expenses} layout="vertical">
@@ -611,7 +613,9 @@ const fetchUserSubscription = async (userId) => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              </div>
             </>
+
           )}
 
           {/* Table View */}
