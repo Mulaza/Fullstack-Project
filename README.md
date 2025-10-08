@@ -7,7 +7,6 @@
 
 ExpenseFlow is a minimalist expense tracking application built with Next.js and Supabase. Track your expenses, visualize spending patterns, and export your financial data with ease.
 
----
 
 ## Task Requirements
 
@@ -22,6 +21,10 @@ Read the requirements for the take home task [here](./public/readme-files/requir
 ![Dashbaord Page](./public/readme-files/screenshot-2.png)
 
 ![Dashbaord Page](./public/readme-files/screenshot-3.png)
+
+![Dashbaord Page](./public/readme-files/screenshot-4.png)
+
+![Dashbaord Page](./public/readme-files/screenshot-5.png)
 ---
 
 ## Features
@@ -51,7 +54,7 @@ Read the requirements for the take home task [here](./public/readme-files/requir
 Before you begin, ensure you have the following installed:
 
 - **Node.js** (v18.0.0 or higher)
-- **npm** or **yarn** or **pnpm**
+- **npm** or **yarn**
 - **Git**
 - A **Supabase** account ([Sign up here](https://supabase.com))
 
@@ -389,13 +392,6 @@ yarn start
 1. Click "Upgrade" or "Change Plan" in the header
 2. Select your desired plan (Free, Pro, Business)
 3. Click "Upgrade Now"
-
----
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ---
 
 **Made by Mulaza Jacinto**
