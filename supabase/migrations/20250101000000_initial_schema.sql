@@ -1,17 +1,6 @@
--- ExpenseFlow Database Schema - No Trigger Version
--- Run this in Supabase SQL Editor
+-- ExpenseFlow Database Schema 
 
--- STEP 1: Drop the problematic trigger
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP FUNCTION IF EXISTS public.handle_new_user();
-
--- STEP 2: Drop and recreate tables with correct structure
-DROP TABLE IF EXISTS expenses CASCADE;
-DROP TABLE IF EXISTS user_subscriptions CASCADE;
-DROP TABLE IF EXISTS subscription_plans CASCADE;
-DROP VIEW IF EXISTS user_subscription_details CASCADE;
-
--- 3. Create subscription_plans table
+-- 1. Create subscription_plans table
 CREATE TABLE subscription_plans (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
@@ -36,7 +25,7 @@ INSERT INTO subscription_plans (name, display_name, price, features, can_export_
    '["Track unlimited expenses", "Advanced analytics", "7 categories", "PDF export", "CSV export"]'::jsonb,
    true, true);
 
--- 4. Create user_subscriptions table
+-- 2. Create user_subscriptions table
 CREATE TABLE user_subscriptions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,
@@ -50,7 +39,7 @@ CREATE TABLE user_subscriptions (
 CREATE INDEX idx_user_subscriptions_user_id ON user_subscriptions(user_id);
 CREATE INDEX idx_user_subscriptions_plan_id ON user_subscriptions(plan_id);
 
--- 5. Create expenses table
+-- 3. Create expenses table
 CREATE TABLE expenses (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,
@@ -68,17 +57,17 @@ CREATE INDEX idx_expenses_user_id ON expenses(user_id);
 CREATE INDEX idx_expenses_date ON expenses(date);
 CREATE INDEX idx_expenses_category ON expenses(category);
 
--- 6. Enable RLS
+-- 4. Enable RLS
 ALTER TABLE subscription_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 
--- 7. RLS Policies for subscription_plans (anyone can view)
+-- 5. RLS Policies for subscription_plans (anyone can view)
 CREATE POLICY "Anyone can view subscription plans"
   ON subscription_plans FOR SELECT
   USING (true);
 
--- 8. RLS Policies for user_subscriptions
+-- 6. RLS Policies for user_subscriptions
 -- Allow service_role full access
 CREATE POLICY "Service role has full access to subscriptions"
   ON user_subscriptions FOR ALL
@@ -99,7 +88,7 @@ CREATE POLICY "Users can update their own subscription"
   USING (auth.uid()::text = user_id::text)
   WITH CHECK (auth.uid()::text = user_id::text);
 
--- 9. RLS Policies for expenses
+-- 7. RLS Policies for expenses
 -- Allow service_role full access
 CREATE POLICY "Service role has full access to expenses"
   ON expenses FOR ALL
@@ -129,7 +118,7 @@ CREATE POLICY "Users can delete their own expenses"
   TO authenticated
   USING (auth.uid()::text = user_id::text);
 
--- 10. Create updated_at trigger function
+-- 8. Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -138,7 +127,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 11. Add updated_at triggers
+-- 9. Add updated_at triggers
 CREATE TRIGGER update_subscription_plans_updated_at
   BEFORE UPDATE ON subscription_plans
   FOR EACH ROW 
@@ -154,7 +143,7 @@ CREATE TRIGGER update_expenses_updated_at
   FOR EACH ROW 
   EXECUTE FUNCTION update_updated_at_column();
 
--- 12. Create helpful view
+-- 10. Create helpful view
 CREATE VIEW user_subscription_details AS
 SELECT 
   us.id,
@@ -171,14 +160,14 @@ SELECT
 FROM user_subscriptions us
 JOIN subscription_plans sp ON us.plan_id = sp.id;
 
--- 13. Grant necessary permissions
+-- 11. Grant necessary permissions
 GRANT ALL ON subscription_plans TO service_role;
 GRANT ALL ON user_subscriptions TO service_role;
 GRANT ALL ON expenses TO service_role;
 GRANT SELECT ON subscription_plans TO authenticated;
 GRANT SELECT ON user_subscription_details TO authenticated, anon;
 
--- 14. Verify setup
+-- 12. Verify setup
 DO $$
 DECLARE
   plan_count INTEGER;
