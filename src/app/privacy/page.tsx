@@ -191,15 +191,9 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-3xl font-bold mb-4">13. Contact Us</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              If you have any questions about this Privacy Policy or our data practices, please contact us:
+              If you have any questions about this Privacy Policy or our data practices, please contact us.
             </p>
-            <div className="bg-gray-50 rounded-2xl p-6">
-              <p className="text-gray-700">
-                <strong>Email:</strong> privacy@expenseflow.com<br />
-                <strong>Address:</strong> 123 Habit Street, San Francisco, CA 94102<br />
-                <strong>Data Protection Officer:</strong> dpo@expenseflow.com
-              </p>
-            </div>
+      
           </section>
         </div>
 

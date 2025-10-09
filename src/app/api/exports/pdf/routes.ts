@@ -1,132 +1,154 @@
 // src/app/api/exports/pdf/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/app/lib/supabase-server';
-
-async function getUserFromRequest(request: NextRequest) {
-  const token = request.headers.get('authorization')?.replace('Bearer ', '');
-  if (!token) return null;
-
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-  return error ? null : user;
-}
+import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
-  const user = await getUserFromRequest(request);
-  
-  if (!user) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
   try {
-    // Get user subscription with plan details
-    const { data: subscription, error: subError } = await supabaseAdmin
+    // Validate environment variables first
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing Supabase environment variables');
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
+    // Create Supabase client inside the function
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    // Get auth token
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Get user from token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription
+    const { data: subscription, error: subError } = await supabase
       .from('user_subscription_details')
       .select('*')
       .eq('user_id', user.id)
       .single();
 
-    if (subError || !subscription) {
+    if (subError) {
+      console.error('Subscription fetch error:', subError);
       return NextResponse.json(
-        { error: 'Subscription not found' },
-        { status: 400 }
+        { error: 'Could not fetch subscription' },
+        { status: 500 }
       );
     }
 
-    // Check if user's plan allows PDF export
-    if (!subscription.can_export_pdf) {
+    if (!subscription?.can_export_pdf) {
       return NextResponse.json(
-        {
-          error: 'PDF export requires Pro or Business plan',
-          requiresUpgrade: true,
-          currentPlan: subscription.plan_name
-        },
+        { error: 'Upgrade required to export reports', requiresUpgrade: true },
         { status: 403 }
       );
     }
 
-    const { data: expenses, error: expensesError } = await supabaseAdmin
+    // Fetch expenses
+    const { data: expenses, error: expenseError } = await supabase
       .from('expenses')
       .select('*')
       .eq('user_id', user.id)
       .order('date', { ascending: false });
 
-    if (expensesError) {
+    if (expenseError) {
+      console.error('Expense fetch error:', expenseError);
       return NextResponse.json(
-        { error: expensesError.message },
-        { status: 400 }
+        { error: 'Failed to fetch expenses' },
+        { status: 500 }
       );
     }
 
-    // Generate HTML for PDF
-    const totalAmount = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
-    
-    const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    h1 { color: #000000; }
-    .summary { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th { background: #000000; color: white; padding: 12px; text-align: left; }
-    td { padding: 10px; border-bottom: 1px solid #ddd; }
-    tr:hover { background: #f9f9f9; }
-    .footer { margin-top: 40px; text-align: center; color: #666; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <h1>Expense Report</h1>
-  <div class="summary">
-    <p><strong>Total Expenses:</strong> $${totalAmount.toFixed(2)}</p>
-    <p><strong>Number of Transactions:</strong> ${expenses.length}</p>
-    <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
-  </div>
-  
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Title</th>
-        <th>Category</th>
-        <th>Amount</th>
-        <th>Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${expenses.map(exp => `
-        <tr>
-          <td>${exp.date}</td>
-          <td>${exp.title}</td>
-          <td>${exp.category}</td>
-          <td>$${parseFloat(exp.amount).toFixed(2)}</td>
-          <td>${exp.notes || '-'}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
-  
-  <div class="footer">
-    <p>Generated by ExpenseFlow | ${new Date().toISOString()}</p>
-  </div>
-</body>
-</html>
-    `;
+    // Calculate summary
+    const total = (expenses || []).reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+    const expenseCount = expenses?.length || 0;
 
-    return new NextResponse(html, {
+    // Group by category
+    const categories = ['Food', 'Transport', 'Entertainment', 'Health', 'Shopping', 'Bills', 'Other'];
+    const categoryBreakdown = categories
+      .map(cat => {
+        const categoryExpenses = (expenses || []).filter(exp => exp.category === cat);
+        return {
+          category: cat,
+          total: categoryExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0),
+          count: categoryExpenses.length
+        };
+      })
+      .filter(item => item.count > 0);
+
+    // Build JSON report
+    const report = {
+      report_metadata: {
+        generated_at: new Date().toISOString(),
+        generated_date: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }),
+        user_email: user.email,
+        report_type: 'expense_export',
+        version: '1.0'
+      },
+      summary: {
+        total_expenses: expenseCount,
+        total_amount: parseFloat(total.toFixed(2)),
+        average_expense: expenseCount > 0 ? parseFloat((total / expenseCount).toFixed(2)) : 0,
+        currency: 'USD',
+        date_range: {
+          earliest: expenseCount > 0 ? expenses[expenses.length - 1].date : null,
+          latest: expenseCount > 0 ? expenses[0].date : null
+        }
+      },
+      category_breakdown: categoryBreakdown.map(item => ({
+        category: item.category,
+        total: parseFloat(item.total.toFixed(2)),
+        count: item.count,
+        percentage: total > 0 ? parseFloat(((item.total / total) * 100).toFixed(2)) : 0
+      })),
+      expenses: (expenses || []).map(exp => ({
+        id: exp.id,
+        title: exp.title || 'Untitled',
+        amount: parseFloat(exp.amount || 0),
+        date: exp.date,
+        category: exp.category || 'Other',
+        notes: exp.notes || '',
+        created_at: exp.created_at,
+        updated_at: exp.updated_at
+      }))
+    };
+
+    // Return as formatted JSON
+    const jsonString = JSON.stringify(report, null, 2);
+    const filename = `expense_report_${new Date().toISOString().split('T')[0]}.json`;
+
+    return new NextResponse(jsonString, {
+      status: 200,
       headers: {
-        'Content-Type': 'text/html',
-        'Content-Disposition': `attachment; filename=expenses_${new Date().toISOString().split('T')[0]}.html`
-      }
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
     });
+
   } catch (error: any) {
-    console.error('PDF export error:', error);
+    console.error('Unexpected error in export route:', error);
     return NextResponse.json(
-      { error: error.message },
+      { 
+        error: 'Internal server error',
+        details: error?.message || 'Unknown error'
+      },
       { status: 500 }
     );
   }

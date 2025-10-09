@@ -43,49 +43,53 @@ export default function ExpenseDashboard() {
     await fetchExpenses(user.id);
   };
 
-
-const fetchUserSubscription = async (userId) => {
-  // First try to get existing subscription
-  const { data, error } = await supabase
-    .from('user_subscription_details')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-  
-  if (error && error.code !== 'PGRST116') {
-    // PGRST116 is "not found" - that's okay, we'll create it
-    // Other errors are real problems
-    console.error('Error fetching subscription:', error);
-  }
-  
-  if (data) {
-    // Found existing subscription
-    setSubscription(data);
-    return;
-  }
-
-  // No subscription found - create one automatically
-  console.log('No subscription found, creating one...');
-  
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
+  const fetchUserSubscription = async (userId) => {
+    const { data, error } = await supabase
+      .from('user_subscription_details')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
     
-    const response = await fetch('/api/subscriptions/ensure', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session?.access_token}`,
-        'Content-Type': 'application/json'
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching subscription:', error);
+    }
+    
+    if (data) {
+      setSubscription(data);
+      return;
+    }
+
+    console.log('No subscription found, creating one...');
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch('/api/subscriptions/ensure', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.subscription) {
+        console.log('Subscription created successfully');
+        setSubscription(result.subscription);
+      } else {
+        console.error('Failed to create subscription');
+        setSubscription({
+          plan_name: 'free',
+          display_name: 'Free',
+          can_export_pdf: false,
+          can_export_csv: false,
+          price: 0,
+          features: []
+        });
       }
-    });
-
-    const result = await response.json();
-
-    if (result.success && result.subscription) {
-      console.log('Subscription created successfully');
-      setSubscription(result.subscription);
-    } else {
-      console.error('Failed to create subscription');
-      // Set a default free subscription so the UI doesn't break
+    } catch (err) {
+      console.error('Error auto-creating subscription:', err);
       setSubscription({
         plan_name: 'free',
         display_name: 'Free',
@@ -95,20 +99,7 @@ const fetchUserSubscription = async (userId) => {
         features: []
       });
     }
-  } catch (err) {
-    console.error('Error auto-creating subscription:', err);
-    // Set a default free subscription so the UI doesn't break
-    setSubscription({
-      plan_name: 'free',
-      display_name: 'Free',
-      can_export_pdf: false,
-      can_export_csv: false,
-      price: 0,
-      features: []
-    });
-  }
-};
-
+  };
 
   const fetchExpenses = async (userId) => {
     setLoading(true);
@@ -233,52 +224,6 @@ const fetchUserSubscription = async (userId) => {
     setShowEditModal(true);
   };
 
-  const exportToPDF = async () => {
-    if (!subscription?.can_export_pdf) {
-      window.location.href = '/subscriptions';
-      return;
-    }
-
-    setActionLoading(true);
-    setLoadingMessage('Generating PDF...');
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await fetch('/api/exports/pdf', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        if (error.requiresUpgrade) {
-          alert(error.error);
-          window.location.href = '/subscriptions';
-        } else {
-          alert('Error generating PDF: ' + error.error);
-        }
-        setActionLoading(false);
-        return;
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `expenses_${new Date().toISOString().split('T')[0]}.html`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      
-      setActionLoading(false);
-    } catch (error) {
-      alert('Error: ' + error.message);
-      setActionLoading(false);
-    }
-  };
-
   const exportToCSV = async () => {
     if (!subscription?.can_export_csv) {
       window.location.href = '/subscriptions';
@@ -299,12 +244,22 @@ const fetchUserSubscription = async (userId) => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        if (error.requiresUpgrade) {
-          alert(error.error);
-          window.location.href = '/subscriptions';
+        const contentType = response.headers.get('content-type') || '';
+        
+        if (contentType.includes('application/json')) {
+          try {
+            const error = await response.json();
+            if (error.requiresUpgrade) {
+              alert(error.error);
+              window.location.href = '/subscriptions';
+            } else {
+              alert('Error generating CSV: ' + error.error);
+            }
+          } catch (parseError) {
+            alert('Error generating CSV. Please try again.');
+          }
         } else {
-          alert('Error generating CSV: ' + error.error);
+          alert('Server error occurred. Please try again.');
         }
         setActionLoading(false);
         return;
@@ -348,7 +303,6 @@ const fetchUserSubscription = async (userId) => {
     amount: expensesByDate[date]
   }));
 
-  // Top 5 Biggest Expenses
   const top5Expenses = [...expenses]
     .sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount))
     .slice(0, 5)
@@ -376,7 +330,8 @@ const fetchUserSubscription = async (userId) => {
     return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   };
 
-  const canExportPDF = () => subscription?.can_export_pdf || false;
+  // NEW: Check if user has access to advanced charts (Pro/Business)
+  const hasAdvancedCharts = () => subscription?.can_export_pdf || false;
   const canExportCSV = () => subscription?.can_export_csv || false;
   const userPlan = subscription?.plan_name || 'free';
 
@@ -402,7 +357,6 @@ const fetchUserSubscription = async (userId) => {
         </div>
       )}
 
-      {/* Fixed Sidebar */}
       <div className="w-16 bg-white border-r border-gray-200 flex flex-col items-center py-6 fixed left-0 top-0 bottom-0 z-30">
         <div className="flex-1 flex flex-col gap-6 mt-8">
           <button
@@ -445,27 +399,12 @@ const fetchUserSubscription = async (userId) => {
         </button>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col ml-16">
-        {/* Header */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
           <div className="px-6 py-4 flex items-center justify-between">
             <h1 className="text-xl font-semibold text-black">ExpenseFlow</h1>
             
             <div className="flex items-center gap-3">
-              <button
-                onClick={exportToPDF}
-                disabled={!canExportPDF()}
-                className={`border px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  canExportPDF()
-                    ? 'border-gray-300 text-black hover:bg-gray-50'
-                    : 'border-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
-                title={!canExportPDF() ? 'Requires Pro or Business plan' : 'Export to PDF'}
-              >
-                Export PDF
-              </button>
-
               <button
                 onClick={exportToCSV}
                 disabled={!canExportCSV()}
@@ -506,9 +445,7 @@ const fetchUserSubscription = async (userId) => {
           </div>
         </header>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-auto p-6 bg-gray-50">
-          {/* Stats Cards - Only on Charts View */}
           {currentView === 'charts' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="bg-white rounded-xl p-6 border border-gray-200">
@@ -526,7 +463,6 @@ const fetchUserSubscription = async (userId) => {
             </div>
           )}
 
-          {/* Add Expense Button */}
           <div className="mb-6">
             <button
               onClick={() => {
@@ -539,9 +475,9 @@ const fetchUserSubscription = async (userId) => {
             </button>
           </div>
 
-          {/* Charts View */}
           {currentView === 'charts' && expenses.length > 0 && (
             <>
+              {/* FREE CHARTS - Always visible */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <div className="bg-white rounded-xl p-6 border border-gray-200">
                   <h3 className="text-base font-semibold mb-4 text-black">Spending Over Time</h3>
@@ -579,46 +515,135 @@ const fetchUserSubscription = async (userId) => {
                 </div>
               </div>
 
-              {/* Top 5 Biggest Expenses */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* PRO CHARTS - Locked for free users */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Top 5 Biggest Expenses - PRO FEATURE */}
+                {top5Expenses.length > 0 && (
+                  <div className="bg-white rounded-xl p-6 border border-gray-200 relative">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-semibold text-black">Top 5 Biggest Expenses</h3>
+                      {!hasAdvancedCharts() && (
+                        <span className="px-2 py-1 bg-black text-white text-xs font-semibold rounded-full">
+                          PRO
+                        </span>
+                      )}
+                    </div>
+                    
+                    {hasAdvancedCharts() ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={top5Expenses} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis type="number" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                          <YAxis dataKey="title" type="category" stroke="#6b7280" style={{ fontSize: '12px' }} width={120} />
+                          <Tooltip />
+                          <Bar dataKey="amount" radius={[0, 8, 8, 0]}>
+                            {top5Expenses.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={categoryColors[entry.category] || '#000000'} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="relative h-[300px]">
+                        {/* Blurred preview */}
+                        <div className="absolute inset-0 filter blur-md opacity-40">
+                          <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={top5Expenses} layout="vertical">
+                              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                              <XAxis type="number" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                              <YAxis dataKey="title" type="category" stroke="#6b7280" style={{ fontSize: '12px' }} width={120} />
+                              <Bar dataKey="amount" radius={[0, 8, 8, 0]}>
+                                {top5Expenses.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={categoryColors[entry.category] || '#000000'} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                        
+                        {/* Lock overlay */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+                          <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mb-4">
+                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                          </div>
+                          <h4 className="text-lg font-bold text-black mb-2">Unlock Advanced Analytics</h4>
+                          <p className="text-sm text-gray-600 mb-4 text-center max-w-xs">
+                            Upgrade to Pro to access detailed expense breakdowns and insights
+                          </p>
+                          <a
+                            href="/subscriptions"
+                            className="bg-black text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors"
+                          >
+                            Upgrade to Pro
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {top5Expenses.length > 0 && (
-                <div className="bg-white rounded-xl p-6 border border-gray-200">
-                  <h3 className="text-base font-semibold mb-4 text-black">Top 5 Biggest Expenses</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={top5Expenses} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis type="number" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                      <YAxis dataKey="title" type="category" stroke="#6b7280" style={{ fontSize: '12px' }} width={120} />
-                      <Tooltip />
-                      <Bar dataKey="amount" radius={[0, 8, 8, 0]}>
-                        {top5Expenses.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={categoryColors[entry.category] || '#000000'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                {/* Category Breakdown - PRO FEATURE */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200 relative">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-semibold text-black">Category Breakdown</h3>
+                    {!hasAdvancedCharts() && (
+                      <span className="px-2 py-1 bg-black text-white text-xs font-semibold rounded-full">
+                        PRO
+                      </span>
+                    )}
+                  </div>
+                  
+                  {hasAdvancedCharts() ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={expensesByCategory}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="name" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                        <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="#000000" radius={[8, 8, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="relative h-[300px]">
+                      {/* Blurred preview */}
+                      <div className="absolute inset-0 filter blur-md opacity-40">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={expensesByCategory}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis dataKey="name" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                            <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                            <Bar dataKey="value" fill="#000000" radius={[8, 8, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      
+                      {/* Lock overlay */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+                        <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mb-4">
+                          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                        </div>
+                        <h4 className="text-lg font-bold text-black mb-2">Unlock Advanced Analytics</h4>
+                        <p className="text-sm text-gray-600 mb-4 text-center max-w-xs">
+                          Upgrade to Pro to see detailed category analysis
+                        </p>
+                        <a
+                          href="/subscriptions"
+                          className="bg-black text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors"
+                        >
+                          Upgrade to Pro
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-
-              <div className="bg-white rounded-xl p-6 border border-gray-200">
-                <h3 className="text-base font-semibold mb-4 text-black">Category Breakdown</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={expensesByCategory}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="name" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                    <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#000000" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
               </div>
             </>
-
           )}
 
-          {/* Table View */}
           {currentView === 'table' && (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="p-6 border-b border-gray-200">
@@ -679,7 +704,6 @@ const fetchUserSubscription = async (userId) => {
             </div>
           )}
 
-          {/* Empty State for Charts */}
           {currentView === 'charts' && expenses.length === 0 && (
             <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
               <div className="text-gray-500 mb-2 font-medium">No expenses to display</div>
@@ -689,7 +713,6 @@ const fetchUserSubscription = async (userId) => {
         </div>
       </div>
 
-      {/* Add Modal */}
       {showModal && (
         <div 
           className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-40"
@@ -775,7 +798,6 @@ const fetchUserSubscription = async (userId) => {
         </div>
       )}
 
-      {/* Edit Modal */}
       {showEditModal && (
         <div 
           className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-40"
@@ -863,7 +885,6 @@ const fetchUserSubscription = async (userId) => {
         </div>
       )}
 
-      {/* Delete Modal */}
       {showDeleteModal && (
         <div 
           className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-40"

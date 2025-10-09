@@ -33,7 +33,7 @@ Read the requirements for the take home task [here](./public/readme-files/requir
 - **Expense Management** - Add, edit, and delete expenses with categories
 - **Visual Analytics** - Interactive charts showing spending patterns
 - **Multi-tier Plans** - Free, Pro, and Business subscription tiers
-- **PDF Export** - Generate professional PDF reports (Pro & Business)
+- **Extra Charts** - 2 New chart reports (Pro & Business)
 - **CSV Export** - Download expense data as CSV (Business only)
 ---
 
@@ -44,7 +44,6 @@ Read the requirements for the take home task [here](./public/readme-files/requir
 - **Authentication:** Supabase Auth
 - **Styling:** Tailwind CSS
 - **Charts:** Recharts
-- **PDF Generation:** jsPDF + jspdf-autotable
 - **Language:** TypeScript
 
 ---
@@ -137,10 +136,10 @@ INSERT INTO subscription_plans (name, display_name, price, features, can_export_
    '["Track unlimited expenses", "Basic analytics", "7 categories"]'::jsonb,
    false, false),
   ('pro', 'Pro', 4.99,
-   '["Track unlimited expenses", "Basic analytics", "7 categories", "PDF export"]'::jsonb,
+   '["Track unlimited expenses", "Basic analytics", "7 categories", "2 new charts"]'::jsonb,
    true, false),
   ('business', 'Business', 14.99,
-   '["Track unlimited expenses", "Advanced analytics", "7 categories", "PDF export", "CSV export"]'::jsonb,
+   '["Track unlimited expenses", "Advanced analytics", "7 categories", "2 new charts", "CSV export"]'::jsonb,
    true, true);
 
 -- 2. Create user_subscriptions table
@@ -373,10 +372,6 @@ yarn start
   - Bar chart comparison
 
 ### Exporting Data
-
-**PDF Export** (Pro & Business plans):
-- Click "Export PDF" in the header
-- A professional PDF report will download
 
 **CSV Export** (Business plan only):
 - Click "Export CSV" in the header

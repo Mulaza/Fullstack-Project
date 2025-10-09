@@ -131,11 +131,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-3xl font-bold mb-4">12. Contact Us</h2>
             <p className="text-gray-700 leading-relaxed">
-              If you have any questions about these Terms of Service, please contact us at:
-            </p>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              Email: legal@expenseflow.com<br />
-              Address: 123 Habit Street, San Francisco, CA 94102
+              If you have any questions about these Terms of Service, please contact us.
             </p>
           </section>
         </div>

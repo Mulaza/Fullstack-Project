@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       data = result.data;
       error = result.error;
     } else {
-      // Update existing subscription
+
       const result = await supabaseAdmin
         .from('user_subscriptions')
         .update({ 

@@ -10,9 +10,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^141.0.0",
     "@supabase/supabase-js": "^2.58.0",
-    "jspdf": "^3.0.3",
-    "jspdf-autotable": "^5.0.2",
     "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",

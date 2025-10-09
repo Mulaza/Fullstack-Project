@@ -19,10 +19,10 @@ INSERT INTO subscription_plans (name, display_name, price, features, can_export_
    '["Track unlimited expenses", "Basic analytics", "7 categories"]'::jsonb,
    false, false),
   ('pro', 'Pro', 4.99,
-   '["Track unlimited expenses", "Basic analytics", "7 categories", "PDF export"]'::jsonb,
+   '["Track unlimited expenses", "Basic analytics", "7 categories", "2 new charts"]'::jsonb,
    true, false),
   ('business', 'Business', 14.99,
-   '["Track unlimited expenses", "Advanced analytics", "7 categories", "PDF export", "CSV export"]'::jsonb,
+   '["Track unlimited expenses", "Advanced analytics", "7 categories", "2 new charts", "CSV export"]'::jsonb,
    true, true);
 
 -- 2. Create user_subscriptions table

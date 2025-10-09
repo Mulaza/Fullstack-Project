@@ -311,7 +311,7 @@ export default function LandingPage() {
                 <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 6l12 12M6 18L18 6"/>
                 </svg>
-                  PDF export
+                  2 New charts
                 </li>
                 <li className="flex items-center gap-2 text-gray-700">
                 <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"aria-hidden="true">
@@ -350,7 +350,7 @@ export default function LandingPage() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  PDF export
+                  2 New charts
                 </li>
                 <li className="flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"aria-hidden="true">
@@ -388,7 +388,7 @@ export default function LandingPage() {
                   <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  PDF export
+                  2 New charts
                 </li>
                                 <li className="flex items-center gap-2 text-gray-700">
                   <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
