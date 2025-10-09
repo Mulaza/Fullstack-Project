@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Creating user:', sanitizedEmail);
 
-    // Create user with admin client (NO TRIGGER, so this should work)
+    // Create user with admin client
     const { data: userData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
       email: sanitizedEmail,
       password,
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     console.log('User created successfully:', userData.user.id);
 
-    // Now create the subscription (using service_role, bypassing RLS)
+    // Create the subscription 
     try {
       // Get the free plan ID
       const { data: freePlan, error: planError } = await supabaseAdmin
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
       console.log('Creating subscription for user:', userData.user.id, 'with plan:', freePlan.id);
 
-      // Create subscription using service role (has full permissions)
+      // Create subscription using service role 
       const { data: subscription, error: subError } = await supabaseAdmin
         .from('user_subscriptions')
         .insert({
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
 
     } catch (subCreationError: any) {
       console.error('Unexpected subscription error:', subCreationError);
-      // User is created, subscription failed - not critical
+      // User is created, subscription failed 
       return NextResponse.json({
         success: true,
         user: userData.user,

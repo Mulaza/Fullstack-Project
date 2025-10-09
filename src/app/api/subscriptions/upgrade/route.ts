@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id)
         .select();
       
-      // Take the first result if multiple exist (cleanup duplicates)
+      // Take the first result if multiple exist 
       data = result.data?.[0];
       error = result.error;
 

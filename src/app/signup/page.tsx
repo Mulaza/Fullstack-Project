@@ -86,7 +86,7 @@ export default function SignupPage() {
         return;
       }
 
-      // Now sign in the user
+      // Sign in the user
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: sanitizedEmail,
         password
